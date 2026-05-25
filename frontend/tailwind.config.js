@@ -59,9 +59,12 @@ export default {
       borderRadius: {
         xs: 'var(--oe-radius-xs)',
         sm: 'var(--oe-radius-sm)',
+        DEFAULT: '0px',
         md: 'var(--oe-radius-md)',
         lg: 'var(--oe-radius-lg)',
         xl: 'var(--oe-radius-xl)',
+        '2xl': '0px',
+        '3xl': '0px',
       },
       boxShadow: {
         xs: 'var(--oe-shadow-xs)',

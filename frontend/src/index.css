@@ -61,14 +61,13 @@
   --oe-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
   --oe-shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.08);
 
-  /* Radius — Apple-current scale (iOS 17+ / macOS Sequoia / WWDC25 Liquid Glass).
-     Reduced 2026-05-11 to match styles-lab tighter values:
-       xs 4 (unchanged)  sm 8→6   md 12→8   lg 16→10   xl 20→12. */
-  --oe-radius-xs: 4px;
-  --oe-radius-sm: 6px;
-  --oe-radius-md: 8px;
-  --oe-radius-lg: 10px;
-  --oe-radius-xl: 12px;
+  /* Radius — Sharp/squared enterprise style. All edges are 0 except
+     explicit rounded-full circles (avatars, pills). */
+  --oe-radius-xs: 0px;
+  --oe-radius-sm: 0px;
+  --oe-radius-md: 0px;
+  --oe-radius-lg: 0px;
+  --oe-radius-xl: 0px;
   --oe-radius-full: 9999px;
 
   /* Spacing scale — 4px base */
@@ -108,18 +107,18 @@
 /* utility classes (bg-surface-primary, text-content-secondary, etc.)       */
 /* automatically resolve to the overridden values inside this scope.        */
 .ec-sidebar {
-  --oe-bg:           #16315E;
-  --oe-bg-secondary: #1e3f73;
-  --oe-bg-tertiary:  #162d56;
-  --oe-bg-elevated:  #1e3f73;
-  --oe-text-primary:    #ffffff;
+  --oe-bg:           #0F1729;
+  --oe-bg-secondary: #16213A;
+  --oe-bg-tertiary:  #0d1525;
+  --oe-bg-elevated:  #1a2a47;
+  --oe-text-primary:    #f8fafc;
   --oe-text-secondary:  #94a3b8;
   --oe-text-tertiary:   #64748b;
   --oe-text-quaternary: #475569;
-  --oe-border:       rgba(255,255,255,0.08);
-  --oe-border-light: rgba(255,255,255,0.06);
+  --oe-border:       rgba(255,255,255,0.10);
+  --oe-border-light: rgba(255,255,255,0.07);
   --oe-blue:         #10CFC9;
-  --oe-blue-subtle:  rgba(16,207,201,0.18);
+  --oe-blue-subtle:  rgba(16,207,201,0.15);
 }
 
 /* ── Page background: EC off-white ─────────────────────────────────────── */

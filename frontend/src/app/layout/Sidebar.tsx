@@ -47,11 +47,8 @@ import {
   History,
   BrainCircuit,
   SlidersHorizontal,
-  Plus,
-  Search,
-  Pin,
-  PinOff,
   HardDrive,
+  LogOut,
   Link2,
   // 18-Modules Wave icons
   Wrench,
@@ -78,7 +75,6 @@ import { useModuleStore } from '@/stores/useModuleStore';
 import { UpdateNotification } from '@/shared/ui/UpdateChecker';
 import { useViewModeStore } from '@/stores/useViewModeStore';
 import { useRecentStore } from '@/stores/useRecentStore';
-import { useGlobalSearchStore } from '@/stores/useGlobalSearchStore';
 import { getModuleNavItems } from '@/modules/_registry';
 import { useSidebarBadges } from '@/shared/hooks/useSidebarBadges';
 import { useIsRTL } from '@/shared/hooks/useIsRTL';
@@ -88,7 +84,6 @@ import {
   SIDEBAR_WIDTH_ICON,
 } from '@/stores/useSidebarCollapseStore';
 import { useNavVisibilityStore } from '@/stores/useNavVisibilityStore';
-import { RequestCustomModuleDialog } from '@/features/modules/RequestCustomModuleDialog';
 import {
   useActiveProjectProfile,
   buildModuleGate,
@@ -309,48 +304,35 @@ const navGroups: NavGroup[] = [
       // All regional exchange modules injected dynamically from module registry
     ],
   },
+  {
+    id: 'administration',
+    labelKey: 'nav.group_administration',
+    defaultOpen: false,
+    items: [
+      { labelKey: 'users.management', to: '/users', icon: Users },
+      {
+        labelKey: 'nav.audit_log',
+        to: '/admin/audit-log',
+        icon: ScrollText,
+        roleGate: ['admin', 'manager'],
+      },
+      {
+        labelKey: 'nav.permissions_matrix',
+        to: '/admin/permissions',
+        icon: ShieldCheck,
+        roleGate: ['admin', 'manager'],
+      },
+      { labelKey: 'modules.title', to: '/modules', icon: Package },
+      { labelKey: 'nav.settings', to: '/settings', icon: Settings },
+      { labelKey: 'nav.about', to: '/about', icon: Info },
+    ],
+  },
 ];
 
-const bottomNav: NavItem[] = [
-  { labelKey: 'users.management', to: '/users', icon: Users },
-  // Admin: read-only audit-log timeline. Backend permission is
-  // `audit.view` (MANAGER+); we mirror the gate client-side so the row
-  // never appears for `editor` / `viewer` JWTs. Backend enforcement
-  // remains authoritative — the gate here is purely cosmetic.
-  {
-    labelKey: 'nav.audit_log',
-    to: '/admin/audit-log',
-    icon: ScrollText,
-    roleGate: ['admin', 'manager'],
-  },
-  // Admin: read-only permissions matrix (roles × modules). Same
-  // `audit.view` backend gate — surfaced next to the audit log so
-  // operators see them as a single admin surface.
-  {
-    labelKey: 'nav.permissions_matrix',
-    to: '/admin/permissions',
-    icon: ShieldCheck,
-    roleGate: ['admin', 'manager'],
-  },
-  { labelKey: 'modules.title', to: '/modules', icon: Package },
-  { labelKey: 'nav.settings', to: '/settings', icon: Settings },
-  { labelKey: 'nav.about', to: '/about', icon: Info },
-];
-
-/** Flat lookup of every NavItem in the sidebar, keyed by `to`. The
- *  Pinned section uses this to resolve a stored route string into a
- *  full NavItem (with icon, labelKey, badge etc.) without duplicating
- *  the source-of-truth list. */
-const ALL_NAV_ITEMS: Record<string, NavItem> = (() => {
-  const map: Record<string, NavItem> = {};
-  for (const group of navGroups) for (const item of group.items) map[item.to] = item;
-  for (const item of bottomNav) map[item.to] = item;
-  return map;
-})();
+const ALL_ROUTES: string[] = navGroups.flatMap((g) => g.items.map((i) => i.to));
 
 // localStorage key for collapsed state
 const COLLAPSED_KEY = 'oe_sidebar_collapsed';
-const PINNED_KEY = 'oe_sidebar_pinned';
 
 function readCollapsedState(): Record<string, boolean> {
   try {
@@ -370,40 +352,7 @@ function writeCollapsedState(state: Record<string, boolean>) {
   }
 }
 
-function readPinned(): string[] {
-  try {
-    const raw = localStorage.getItem(PINNED_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.filter((p) => typeof p === 'string');
-    }
-  } catch {
-    /* ignore */
-  }
-  return [];
-}
 
-function writePinned(arr: string[]) {
-  try {
-    localStorage.setItem(PINNED_KEY, JSON.stringify(arr));
-  } catch {
-    /* ignore */
-  }
-}
-
-// Two-key keyboard shortcuts for the most-trafficked routes. The
-// sequence is `G` then a single letter — same convention Linear and
-// GitHub use, so muscle memory transfers. We surface the hint inline
-// next to the item so users can discover the shortcut without docs.
-const KBD_HINTS: Record<string, string> = {
-  '/': 'G D',
-  '/projects': 'G P',
-  '/boq': 'G B',
-  '/costs': 'G C',
-  '/bim': 'G M',
-  '/ai-estimate': 'G A',
-  '/settings': 'G ,',
-};
 const KBD_BY_LETTER: Record<string, string> = {
   d: '/',
   p: '/projects',
@@ -479,20 +428,10 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { isModuleEnabled } = useModuleStore();
   const isAdvanced = useViewModeStore((s) => s.isAdvanced);
   const badgeCounts = useSidebarBadges();
-  const openSearch = useGlobalSearchStore((s) => s.openModal);
   const iconified = useSidebarCollapseStore((s) => s.iconified);
   const toggleIconified = useSidebarCollapseStore((s) => s.toggle);
   const isRTL = useIsRTL();
-  const userRole = useAuthStore((s) => s.userRole);
   const isGroupHidden = useNavVisibilityStore((s) => s.isGroupHidden);
-
-  // Role-gate the bottom nav. Items without a `roleGate` always show;
-  // gated items only render when the current JWT role matches. The
-  // backend `RequirePermission` decorator still enforces real access —
-  // this is just to keep the sidebar tidy for non-admin users.
-  const visibleBottomNav = bottomNav.filter(
-    (item) => !item.roleGate || (userRole && (item.roleGate as string[]).includes(userRole)),
-  );
 
   // Drive the global CSS variable so both the aside (`w-sidebar`) and
   // the main-content offset (`lg:pl-sidebar`) shrink/grow in lockstep.
@@ -524,34 +463,13 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     return initial;
   });
 
-  // Pinned routes — small starter section above the first group. Users
-  // pin/unpin via the small icon-button that appears on item hover.
-  const [pinned, setPinned] = useState<string[]>(() => readPinned());
-
-  // Custom-module request dialog — opens from the "Request a custom
-  // module" CTA at the bottom of the nav (below the "+ Add module"
-  // developer-guide tile). The dialog itself handles community vs
-  // bespoke routing.
-  const [customModuleOpen, setCustomModuleOpen] = useState(false);
-
   // Persist collapsed state to localStorage
   useEffect(() => {
     writeCollapsedState(collapsed);
   }, [collapsed]);
 
-  // Persist pinned state to localStorage
-  useEffect(() => {
-    writePinned(pinned);
-  }, [pinned]);
-
   const toggleGroup = useCallback((groupId: string) => {
     setCollapsed((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
-  }, []);
-
-  const togglePin = useCallback((route: string) => {
-    setPinned((prev) =>
-      prev.includes(route) ? prev.filter((p) => p !== route) : [...prev, route],
-    );
   }, []);
 
   // ── Two-key navigation shortcuts (G then X) ──────────────────────────
@@ -615,18 +533,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     };
   }, [navigate]);
 
-  // Resolve pinned route strings into full NavItems (skipping any
-  // routes that are no longer in the registry — e.g. a module the user
-  // pinned earlier has been disabled).
-  const pinnedItems: NavItem[] = pinned
-    .map((route) => ALL_NAV_ITEMS[route])
-    .filter((item): item is NavItem => Boolean(item));
-
-  // Pick a single winning route for highlighting. Without this, both
-  // `/bim` (parent) and `/bim/rules` (child) would render as "active"
-  // because `/bim/rules` starts with `/bim/`. We hand the chosen
-  // string down to every `SidebarItem` so only one row lights up.
-  const activeRoute = pickActiveRoute(location, Object.keys(ALL_NAV_ITEMS));
+  const activeRoute = pickActiveRoute(location, ALL_ROUTES);
 
   // ── Project focus (in-place) ────────────────────────────────────────
   // When the active project has a setup profile with focus mode ON, the
@@ -640,21 +547,12 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   // false and every row renders exactly as the flat default.
   const { profile: activeProfile } = useActiveProjectProfile();
   const gate = buildModuleGate(activeProfile);
-  // Running 1..N sequence assigned to project-needed rows as they
-  // render top-to-bottom. Resets every render (component body re-runs),
-  // so the numbers always read in visual order regardless of grouping.
-  let routeSeq = 0;
-
   return (
     <aside
       data-tour="sidebar"
       className="oe-sidebar ec-sidebar relative flex h-full w-sidebar flex-col bg-surface-primary"
       style={{
-        // Right-edge depth — 1px hairline + a soft 12px fade. Replaces
-        // the hard `border-r border-border-light` for a Linear/Vercel
-        // feel: definition without rigidity.
-        boxShadow:
-          '1px 0 0 rgba(15, 23, 42, 0.05), 4px 0 12px -8px rgba(15, 23, 42, 0.06)',
+        boxShadow: '1px 0 0 rgba(0,0,0,0.5), 6px 0 24px -6px rgba(0,0,0,0.4)',
       }}
     >
       {/* Page-scoped CSS — sidebar-only animations. Defined inline to
@@ -744,12 +642,10 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           isRTL ? 'left-0' : 'right-0',
           // Size + shape: tall pill, narrow.
           'h-12 w-5 items-center justify-center rounded-full',
-          // Surface: clean white with a subtle ring; hover lifts to the
-          // brand colour. Smooth transition on both background and the
-          // chevron rotation, so the toggle feels intentional.
-          'border border-border-light bg-surface-primary text-content-tertiary shadow-sm',
-          'hover:border-oe-blue hover:bg-oe-blue hover:text-white hover:shadow-md hover:shadow-oe-blue/20',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-blue/40',
+          // Surface: dark glass pill on navy; hover flips to teal accent.
+          'border border-white/15 bg-white/[0.08] text-white/40',
+          'hover:border-[#10CFC9] hover:bg-[#10CFC9] hover:text-[#0F1729] hover:shadow-md hover:shadow-[#10CFC9]/30',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10CFC9]/40',
           'transition-all duration-200 ease-oe',
         )}
         style={{
@@ -780,36 +676,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         />
       </button>
 
-      {/* Search-as-jumper — Linear-style. Triggers the existing global
-          semantic-search palette. Keeps the visible affordance for
-          users who don't know the ⌘K shortcut, while still surfacing
-          it for those who do. When iconified, collapses to a single
-          icon button — the ⌘K shortcut still works regardless. */}
-      <div className={clsx('pt-1 pb-1', iconified ? 'px-2 flex justify-center' : 'px-3')}>
-        <button
-          type="button"
-          onClick={() => openSearch()}
-          className={clsx(
-            'group flex items-center gap-2 rounded-md border border-border-light bg-surface-secondary/60 text-[12px] text-content-tertiary hover:border-content-quaternary/30 hover:bg-surface-secondary hover:text-content-secondary transition-colors',
-            iconified ? 'h-8 w-8 justify-center' : 'w-full px-2.5 py-1.5',
-          )}
-          aria-label={t('search.open', { defaultValue: 'Open search' })}
-          title={iconified ? t('search.open', { defaultValue: 'Open search' }) : undefined}
-        >
-          <Search size={13} strokeWidth={1.75} className="shrink-0" />
-          {!iconified && (
-            <>
-              <span className="truncate">
-                {t('search.placeholder', { defaultValue: 'Search…' })}
-              </span>
-              <kbd className="ms-auto hidden sm:inline-flex items-center gap-0.5 rounded border border-border-light bg-surface-primary px-1 py-px text-[9px] font-medium text-content-quaternary group-hover:text-content-tertiary">
-                ⌘K
-              </kbd>
-            </>
-          )}
-        </button>
-      </div>
-
       {/* Main navigation — grouped with collapsible headers */}
       <nav
         className={clsx(
@@ -818,44 +684,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
         data-engine="cwicr"
       >
-        {/* Pinned section — appears at the top when the user has
-            pinned at least one item. No collapsible chevron; just a
-            small label + the pinned items in their stored order. */}
-        {pinnedItems.length > 0 && (
-          <div className="mb-2">
-            {!iconified && (
-              <div className="mt-2 mb-0.5 flex items-center gap-1.5 px-2.5">
-                <Pin size={9} strokeWidth={2.25} className="text-content-quaternary" />
-                <span className="text-2xs font-medium uppercase tracking-wider text-content-tertiary">
-                  {t('nav.pinned', { defaultValue: 'Pinned' })}
-                </span>
-              </div>
-            )}
-            <ul className="space-y-0.5">
-              {pinnedItems.map((item, i) => (
-                <li
-                  key={item.to}
-                  className="oe-stagger"
-                  style={{ animationDelay: `${i * 18}ms` }}
-                >
-                  <SidebarItem
-                    item={item}
-                    label={t(item.labelKey)}
-                    onClick={onClose}
-                    badge={badgeMap[item.to]}
-                    isPinned={true}
-                    onTogglePin={togglePin}
-                    activeRoute={activeRoute}
-                    iconified={iconified}
-                  />
-                </li>
-              ))}
-            </ul>
-            {iconified && (
-              <div className="my-2 mx-auto h-px w-6 bg-border-light" aria-hidden />
-            )}
-          </div>
-        )}
         {/* Project focus is applied IN PLACE inside the original groups
             below — there is NO separate "project route" section and no
             reordering. Each row is only annotated: needed → sequence
@@ -914,8 +742,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                   const g =
                     gate.active && !iconified ? gate.byRoute(item.to) : null;
                   const notNeeded = g != null && !g.enabled;
-                  const needed = g != null && g.enabled;
-                  const seq = needed ? (routeSeq += 1) : null;
                   return (
                     <li
                       key={item.to}
@@ -927,10 +753,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         label={t(item.labelKey)}
                         onClick={onClose}
                         badge={badgeMap[item.to]}
-                        seq={seq}
                         compact={notNeeded}
-                        isPinned={pinned.includes(item.to)}
-                        onTogglePin={togglePin}
                         activeRoute={activeRoute}
                         iconified={iconified}
                       />
@@ -941,139 +764,93 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             </NavGroupSection>
           );
         })}
-        {/* Add-a-module CTA — dashed-border tile with a plus icon. Sits at
-             the very end of the main nav groups so it reads as "keep going,
-             there's more — build your own". Navigates into the in-app
-             developer guide rather than to the marketplace, which gives
-             contributors a clearer first step. When iconified, shrinks
-             to a centred icon-only square — the dashed border still
-             signals "add something". */}
-        <li className={clsx('pt-2 pb-1', iconified ? 'px-0 flex justify-center' : 'px-3')}>
-          <NavLink
-            to="/modules/developer-guide"
-            onClick={onClose}
-            title={iconified ? t('nav.add_module', { defaultValue: 'Add module' }) : undefined}
-            className={clsx(
-              'group flex items-center rounded-lg border border-dashed border-oe-blue/40 bg-gradient-to-br from-oe-blue/5 via-transparent to-blue-50/40 dark:from-oe-blue/10 dark:via-transparent dark:to-slate-900/30 hover:border-oe-blue hover:from-oe-blue/10 hover:shadow-sm transition-all',
-              iconified ? 'h-9 w-9 justify-center' : 'gap-2.5 px-2.5 py-2',
-            )}
-          >
-            <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md bg-oe-blue/10 text-oe-blue group-hover:bg-oe-blue group-hover:text-white transition-colors">
-              <Plus size={14} strokeWidth={2.5} />
-            </span>
-            {!iconified && (
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-content-primary leading-tight">
-                  {t('nav.add_module', { defaultValue: 'Add module‌⁠‍' })}
-                </span>
-                <span className="block text-[10px] text-content-tertiary leading-tight mt-0.5 truncate">
-                  {t('nav.add_module_hint', { defaultValue: 'Build your own · developer guide‌⁠‍' })}
-                </span>
-              </span>
-            )}
-          </NavLink>
-        </li>
-        {/* Request-a-custom-module CTA — second dashed tile, purple
-             accent, opens a popup instead of navigating. The popup
-             routes the request to two destinations depending on the
-             user's choice:
-               • "Could help others too"  → community / GitHub backlog
-                 → ends up in a future open-source release.
-               • "Only for my company"    → private / bespoke quote
-                 → DDC team replies with scope + price.
-             We keep this distinct from the developer-guide tile above
-             on purpose: contributors who want to build a module
-             themselves use the guide; users who want us to build it
-             for them use this dialog. */}
-        <li className={clsx('pt-1 pb-3', iconified ? 'px-0 flex justify-center' : 'px-3')}>
-          <button
-            type="button"
-            onClick={() => {
-              setCustomModuleOpen(true);
-              onClose?.();
-            }}
-            title={
-              iconified
-                ? t('nav.request_custom_module', { defaultValue: 'Request a custom module' })
-                : undefined
-            }
-            className={clsx(
-              'group flex items-center rounded-lg border border-dashed border-purple-400/40 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-50/40 dark:from-purple-500/10 dark:via-transparent dark:to-slate-900/30 hover:border-purple-500 hover:from-purple-500/10 hover:shadow-sm transition-all text-left',
-              iconified ? 'h-9 w-9 justify-center' : 'w-full gap-2.5 px-2.5 py-2',
-            )}
-            aria-haspopup="dialog"
-            aria-expanded={customModuleOpen}
-          >
-            <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-              <Sparkles size={14} strokeWidth={2.25} />
-            </span>
-            {!iconified && (
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-content-primary leading-tight">
-                  {t('nav.request_custom_module', {
-                    defaultValue: 'Request a custom module‌⁠‍',
-                  })}
-                </span>
-                <span className="block text-[10px] text-content-tertiary leading-tight mt-0.5 truncate">
-                  {t('nav.request_custom_module_hint', {
-                    defaultValue: 'Missing something? Tell us what you need‌⁠‍',
-                  })}
-                </span>
-              </span>
-            )}
-          </button>
-        </li>
       </nav>
 
-      {/* Bottom navigation — soft hairline separator instead of a hard
-          1px border; subtle paper-tint background. Compact mode: smaller
-          rows, tighter spacing, no pin buttons (pinning Users / Modules /
-          Settings / About has no real value — they're already always
-          available here). */}
-      <div
-        className={clsx(
-          'relative py-1 bg-black/[0.02] dark:bg-white/[0.02]',
-          iconified ? 'px-2' : 'px-3',
-        )}
-      >
-        <div
-          className={clsx(
-            'absolute top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent',
-            iconified ? 'left-2 right-2' : 'left-3 right-3',
-          )}
-        />
-        <ul className="space-y-px">
-          {visibleBottomNav.map((item) => (
-            <li key={item.to}>
-              <SidebarItem
-                item={item}
-                label={t(item.labelKey)}
-                onClick={onClose}
-                activeRoute={activeRoute}
-                iconified={iconified}
-                compact
-              />
-            </li>
-          ))}
-        </ul>
-
-        {/* Update notification — compact clickable card in the sidebar; the
-            whole card opens a full-screen modal with highlights + install
-            commands when the user clicks it. Hidden in icon-only mode
-            because the card is text-heavy; users will still see it after
-            expanding the sidebar. */}
+      <div className={clsx('relative py-1', iconified ? 'px-2' : 'px-3')}>
         {!iconified && <UpdateNotification />}
-
       </div>
-      {/* Mounted at the aside root so the dialog escapes any
-          z-index / overflow trap imposed by the inner nav scroller.
-          The dialog itself is full-screen modal (fixed inset-0) and
-          self-renders only when open=true. */}
-      <RequestCustomModuleDialog
-        open={customModuleOpen}
-        onClose={() => setCustomModuleOpen(false)}
-      />
+
+      {/* User account panel pinned to sidebar bottom */}
+      <div className={clsx('border-t border-white/10', iconified ? 'px-2 py-2' : 'px-3 py-2')}>
+        <SidebarUserPanel iconified={iconified} onClose={onClose} />
+      </div>
     </aside>
+  );
+}
+
+function SidebarUserPanel({ iconified, onClose }: { iconified: boolean; onClose?: () => void }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
+  const userEmail = useAuthStore((s) => s.userEmail);
+  const userRole = useAuthStore((s) => s.userRole);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : 'U';
+  const displayName =
+    userEmail?.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) ??
+    'User';
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={clsx(
+          'flex w-full items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-secondary transition-colors',
+          iconified && 'justify-center',
+        )}
+        title={iconified ? (userEmail ?? undefined) : undefined}
+      >
+        <div className="relative h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-oe-blue to-[#38bdf8] flex items-center justify-center text-white text-xs font-semibold">
+          {userInitial}
+          <span aria-hidden className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-[#0F1729]" />
+        </div>
+        {!iconified && (
+          <div className="flex-1 min-w-0 text-left">
+            <div className="text-sm font-semibold text-content-primary truncate">{displayName}</div>
+            <div className="text-xs text-content-tertiary capitalize truncate">{userRole ?? 'User'}</div>
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute bottom-full mb-1 left-0 right-0 rounded-lg border border-white/10 bg-[#16213A] shadow-xl py-1 animate-scale-in"
+        >
+          {userEmail && (
+            <div className="px-3 py-1.5 text-2xs text-content-tertiary truncate">{userEmail}</div>
+          )}
+          <div className="my-1 border-t border-white/10" />
+          <button
+            role="menuitem"
+            onClick={() => { setOpen(false); onClose?.(); navigate('/settings'); }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
+          >
+            <Settings size={14} className="text-content-tertiary" />
+            {t('nav.settings', 'Settings')}
+          </button>
+          <div className="my-1 border-t border-white/10" />
+          <button
+            role="menuitem"
+            onClick={() => { logout(); navigate('/login'); setOpen(false); }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-semantic-error hover:bg-semantic-error-bg transition-colors"
+          >
+            <LogOut size={14} />
+            {t('auth.logout', 'Sign out')}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1134,9 +911,6 @@ function SidebarItem({
   label,
   onClick,
   badge: numericBadge,
-  seq,
-  isPinned,
-  onTogglePin,
   activeRoute,
   iconified,
   compact,
@@ -1145,22 +919,11 @@ function SidebarItem({
   label: string;
   onClick?: () => void;
   badge?: number;
-  seq?: number | null;
-  isPinned?: boolean;
-  onTogglePin?: (route: string) => void;
   activeRoute?: string | null;
   iconified?: boolean;
   compact?: boolean;
 }) {
-  const { t } = useTranslation();
   const Icon = item.icon;
-  const kbdHint = KBD_HINTS[item.to];
-
-  const handlePinClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onTogglePin?.(item.to);
-  };
 
   // Single source of truth for active state — Sidebar picks one winning
   // route across all visible items, so only the most-specific match
@@ -1186,7 +949,7 @@ function SidebarItem({
           clsx(
             'relative mx-auto flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-fast ease-oe',
             isActive
-              ? 'bg-oe-blue/[0.14] text-oe-blue shadow-[inset_0_0_0_1px_rgba(0,122,255,0.18)] dark:bg-oe-blue/25'
+              ? 'bg-surface-secondary text-content-primary'
               : 'text-content-secondary hover:bg-surface-secondary hover:text-content-primary',
           )
         }
@@ -1228,28 +991,12 @@ function SidebarItem({
             item.highlight && !active
               ? 'font-medium bg-gradient-to-r from-[#7c3aed]/10 to-[#0ea5e9]/10 text-[#6d28d9] hover:from-[#7c3aed]/15 hover:to-[#0ea5e9]/15'
               : active
-                ? 'font-semibold border-oe-blue bg-oe-blue/[0.14] text-oe-blue shadow-[inset_0_0_0_1px_rgba(0,122,255,0.06)] dark:bg-oe-blue/25'
+                ? 'font-semibold border-oe-blue bg-surface-secondary text-content-primary'
                 : 'font-medium text-content-secondary hover:bg-surface-secondary hover:text-content-primary',
           );
         }}
       >
-        {/* Project-focus sequence number — only set for rows the active
-            project needs (focus mode on). A small leading chip so the
-            menu reads as a numbered route while keeping its order. */}
-        {seq != null && (
-          <span
-            className={clsx(
-              'shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums transition-colors',
-              isActive
-                ? 'bg-oe-blue text-white'
-                : 'bg-oe-blue-subtle text-oe-blue',
-            )}
-            aria-hidden
-          >
-            {seq}
-          </span>
-        )}
-        <Icon size={compact ? 14 : 16} strokeWidth={isActive ? 2 : 1.75} className="shrink-0" />
+        <Icon size={compact ? 14 : 16} strokeWidth={isActive ? 2 : 1.75} className={clsx('shrink-0', isActive && 'text-oe-blue')} />
         {/* Hover-tooltip via title falls back to the full label even when
             CSS truncates with an ellipsis. The visible width is now
             264px (was 232) so most labels render in full at default
@@ -1266,71 +1013,17 @@ function SidebarItem({
             empty rows previously paid the same 26px tax for nothing,
             squeezing the label width and triggering avoidable
             ellipsis truncation. */}
-        <span className={clsx('ms-auto flex items-center shrink-0', compact ? 'gap-1 ps-1' : 'gap-1.5 ps-1.5')}>
-          {!compact && (
-            <span
-              className={clsx(
-                'hidden lg:inline-flex justify-end items-center gap-0.5 text-[9px] font-medium tracking-wide tabular-nums',
-                kbdHint ? 'min-w-[26px]' : 'min-w-0',
-                isActive ? 'text-oe-blue/60' : 'text-content-quaternary',
-              )}
-            >
-              {kbdHint ?? (
-                <ChevronRight
-                  size={12}
-                  className="oe-hover-arrow text-content-tertiary"
-                />
-              )}
-            </span>
-          )}
-          {numericBadge != null && numericBadge > 0 && (
-            <span
-              className={clsx(
-                'flex h-4 min-w-[1.25rem] items-center justify-center rounded-full text-2xs font-bold px-1 transition-colors',
-                isActive
-                  ? 'bg-oe-blue text-white'
-                  : 'bg-surface-tertiary text-content-secondary',
-              )}
-            >
-              {numericBadge > 99 ? '99+' : numericBadge}
-            </span>
-          )}
-          {item.badge && (
-            <span
-              className={clsx(
-                item.badge === 'BETA'
-                  ? 'text-[9px] font-medium uppercase tracking-wide px-1.5 py-px rounded text-content-quaternary bg-surface-tertiary/60 dark:bg-surface-tertiary/40'
-                  : item.highlight
-                    ? 'text-2xs font-semibold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#0ea5e9] text-white'
-                    : 'text-2xs font-semibold px-1.5 py-0.5 rounded-full text-content-tertiary',
-              )}
-            >
-              {item.badge === 'BETA' ? 'beta' : item.badge}
-            </span>
-          )}
-        </span>
-        {/* Pin / unpin button — only shown when the item supports it
-            (any item with an onTogglePin handler). Visible on hover or
-            persistently when pinned. Click does not navigate. */}
-        {onTogglePin && (
-          <button
-            type="button"
-            onClick={handlePinClick}
-            data-pinned={isPinned ? 'true' : undefined}
-            aria-label={
-              isPinned
-                ? t('nav.unpin', { defaultValue: 'Unpin {{label}}', label })
-                : t('nav.pin', { defaultValue: 'Pin {{label}}', label })
-            }
-            title={isPinned ? t('nav.unpin', { defaultValue: 'Unpin' }) : t('nav.pin', { defaultValue: 'Pin' })}
+        {numericBadge != null && numericBadge > 0 && (
+          <span
             className={clsx(
-              'oe-pin-btn ms-1 flex h-4 w-4 shrink-0 items-center justify-center rounded',
-              'text-content-quaternary hover:text-oe-blue hover:bg-oe-blue/10',
-              isPinned && 'text-oe-blue',
+              'ms-auto flex h-4 min-w-[1.25rem] items-center justify-center rounded-full text-2xs font-bold px-1 transition-colors',
+              isActive
+                ? 'bg-oe-blue text-white'
+                : 'bg-surface-tertiary text-content-secondary',
             )}
           >
-            {isPinned ? <PinOff size={10} strokeWidth={2} /> : <Pin size={10} strokeWidth={2} />}
-          </button>
+            {numericBadge > 99 ? '99+' : numericBadge}
+          </span>
         )}
       </NavLink>
   );

@@ -5,9 +5,8 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
   Table, Table2, ArrowRight, Copy, Trash2, Plus,
   Search, ArrowUpDown, ChevronDown, GitCompareArrows, X, Loader2,
-  ShieldCheck, Wallet,
 } from 'lucide-react';
-import { Card, Badge, EmptyState, Skeleton, Button, Breadcrumb, FileTypeChips } from '@/shared/ui';
+import { Card, Badge, EmptyState, Skeleton, Button, FileTypeChips } from '@/shared/ui';
 import { DateDisplay } from '@/shared/ui/DateDisplay';
 import { apiGet } from '@/shared/lib/api';
 import { getIntlLocale } from '@/shared/lib/formatters';
@@ -568,20 +567,10 @@ export function BOQListPage() {
 
   return (
     <div className="w-full animate-fade-in">
-      <Breadcrumb items={[{ label: t('nav.dashboard', 'Dashboard'), to: '/' }, { label: t('nav.boq', 'Bill of Quantities') }]} className="mb-4" />
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-content-primary">{t('boq.title')}</h1>
-          <p className="mt-1 text-sm text-content-secondary">
-            {allBoqs
-              ? t('boq.list_subtitle_count', {
-                  defaultValue: '{{boqCount}} estimates across {{projectCount}} projects',
-                  boqCount: allBoqs.length,
-                  projectCount: projects?.length ?? 0,
-                })
-              : t('common.loading')}
-          </p>
         </div>
         <div className="flex items-center gap-2">
           {compareMode ? (
@@ -605,18 +594,6 @@ export function BOQListPage() {
             {t('boq.new_estimate', { defaultValue: 'New Estimate' })}
           </Button>
         </div>
-      </div>
-
-      {/* Cross-module links */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate('/validation')}>
-          <ShieldCheck size={13} className="me-1" />
-          {t('boq.link_validation', { defaultValue: 'Run Validation' })}
-        </Button>
-        <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate('/finance')}>
-          <Wallet size={13} className="me-1" />
-          {t('boq.link_finance', { defaultValue: 'View Budget' })}
-        </Button>
       </div>
 
       {/* Stats cards */}

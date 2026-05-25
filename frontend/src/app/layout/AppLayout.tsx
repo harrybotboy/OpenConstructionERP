@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import clsx from 'clsx';
-import { Sidebar, FloatingRecentButton } from './Sidebar';
+import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { FeedbackDialog } from '@/shared/ui';
 import { FloatingQueuePanel } from './FloatingQueuePanel';
@@ -137,8 +137,6 @@ export function AppLayout({ title, children }: AppLayoutProps) {
           while the 200–500 MB snapshot downloads in the background. */}
       <GlobalCatalogueInstallIndicator />
 
-      {/* Floating Recent button — bottom-right corner */}
-      <FloatingRecentButton />
       {/* FloatingChatButton hidden for now */}
 
       {/* OnboardingTour mounts once at App.tsx top level — moving it
