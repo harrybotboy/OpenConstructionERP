@@ -29,6 +29,14 @@ import {
   Users,
   Layers,
   Server,
+  LayoutDashboard,
+  Table2,
+  CalendarDays,
+  Bot,
+  FileBarChart,
+  HardHat,
+  Wallet,
+  Briefcase,
   type LucideIcon,
 } from 'lucide-react';
 import { Card, Badge, Button, Input, InfoHint, Breadcrumb, ConfirmDialog } from '@/shared/ui';
@@ -37,6 +45,7 @@ import { apiGet, apiPost, apiDelete } from '@/shared/lib/api';
 import { useToastStore } from '@/stores/useToastStore';
 import { useModuleStore } from '@/stores/useModuleStore';
 import { getModulesByCategory } from '@/modules/_registry';
+import { useNavVisibilityStore } from '@/stores/useNavVisibilityStore';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -82,12 +91,13 @@ interface CompanyPresetAPI {
 
 /* ── Tab definitions ───────────────────────────────────────────────────── */
 
-type TabKey = 'profiles' | 'data-packages' | 'system';
+type TabKey = 'profiles' | 'data-packages' | 'system' | 'navigation';
 
 const TABS: { key: TabKey; labelKey: string; defaultLabel: string; icon: LucideIcon }[] = [
   { key: 'profiles', labelKey: 'modules.tab_profiles', defaultLabel: 'Company Profiles', icon: Users },
   { key: 'data-packages', labelKey: 'modules.tab_data_packages', defaultLabel: 'Data Packages', icon: Layers },
   { key: 'system', labelKey: 'modules.tab_system', defaultLabel: 'System Modules', icon: Server },
+  { key: 'navigation', labelKey: 'modules.tab_navigation', defaultLabel: 'Navigation', icon: LayoutDashboard },
 ];
 
 /* ── Marketplace category config ───────────────────────────────────────── */
@@ -271,6 +281,7 @@ export function ModulesPage() {
       {activeTab === 'profiles' && <CompanyProfilesTab />}
       {activeTab === 'data-packages' && <DataPackagesTab />}
       {activeTab === 'system' && <SystemModulesTab />}
+      {activeTab === 'navigation' && <NavigationVisibilityTab />}
     </div>
   );
 }
@@ -1282,7 +1293,7 @@ function SystemModulesTab() {
           inline
           className="mt-1"
           text={t('modules.system_hint', {
-            defaultValue: 'System modules are backend plugins loaded from the server. Toggle non-core modules to enable or disable them.',
+            defaultValue: 'System modules are backend plugins loaded from the server. Core modules are always on and cannot be disabled.',
           })}
         />
       </div>
@@ -1338,42 +1349,160 @@ function SystemModulesTab() {
                 )}
               </div>
 
-              {!mod.is_core && (
-                <button
-                  onClick={() => void handleBackendToggle(mod)}
-                  disabled={togglingModule === mod.name}
-                  role="switch"
-                  aria-checked={mod.enabled}
-                  aria-label={t('modules.toggle_module', {
-                    defaultValue: '{{action}} {{name}}',
-                    action: mod.enabled ? t('common.disable', { defaultValue: 'Disable' }) : t('common.enable', { defaultValue: 'Enable' }),
-                    name: mod.display_name,
-                  })}
-                  className="shrink-0"
-                >
-                  {togglingModule === mod.name ? (
-                    <Loader2 size={16} className="animate-spin text-content-tertiary" />
-                  ) : (
+              <button
+                onClick={() => void handleBackendToggle(mod)}
+                disabled={mod.is_core || togglingModule === mod.name}
+                role="switch"
+                aria-checked={mod.is_core ? true : mod.enabled}
+                aria-label={
+                  mod.is_core
+                    ? t('modules.core_module_locked', { defaultValue: '{{name}} is a core module and cannot be disabled.', name: mod.display_name })
+                    : t('modules.toggle_module', {
+                        defaultValue: '{{action}} {{name}}',
+                        action: mod.enabled ? t('common.disable', { defaultValue: 'Disable' }) : t('common.enable', { defaultValue: 'Enable' }),
+                        name: mod.display_name,
+                      })
+                }
+                title={
+                  mod.is_core
+                    ? t('modules.core_module_locked', { defaultValue: '{{name}} is a core module and cannot be disabled.', name: mod.display_name })
+                    : undefined
+                }
+                className={clsx('shrink-0', mod.is_core && 'cursor-not-allowed opacity-40')}
+              >
+                {togglingModule === mod.name ? (
+                  <Loader2 size={16} className="animate-spin text-content-tertiary" />
+                ) : (
+                  <div
+                    className={clsx(
+                      'relative h-5 w-9 rounded-full transition-colors duration-200',
+                      mod.is_core || mod.enabled ? 'bg-oe-blue' : 'bg-content-quaternary/40',
+                    )}
+                  >
                     <div
                       className={clsx(
-                        'relative h-5 w-9 rounded-full transition-colors duration-200',
-                        mod.enabled ? 'bg-oe-blue' : 'bg-content-quaternary/40',
+                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+                        mod.is_core || mod.enabled ? 'translate-x-[18px]' : 'translate-x-0.5',
                       )}
-                    >
-                      <div
-                        className={clsx(
-                          'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
-                          mod.enabled ? 'translate-x-[18px]' : 'translate-x-0.5',
-                        )}
-                      />
-                    </div>
-                  )}
-                </button>
-              )}
+                    />
+                  </div>
+                )}
+              </button>
             </div>
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* ── Tab 4: Navigation Visibility ────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+const NAV_GROUPS: { id: string; label: string; description: string; icon: LucideIcon }[] = [
+  { id: 'overview', label: 'Overview', description: 'Dashboard, Projects, Files', icon: LayoutDashboard },
+  { id: 'estimation', label: 'Estimation', description: 'BOQ, Costs, Assemblies, Catalog', icon: Table2 },
+  { id: 'takeoff', label: 'Takeoff', description: 'PDF, DWG, BIM Viewer, Clash Detection', icon: Layers },
+  { id: 'ai', label: 'AI Estimation', description: 'AI Estimate, Agents, Advisor', icon: Bot },
+  { id: 'planning', label: 'Planning', description: 'Schedule, Tasks, 5D Cost Model', icon: CalendarDays },
+  { id: 'operations', label: 'Field Operations', description: 'Daily Diary, Equipment, Resources', icon: HardHat },
+  { id: 'finance', label: 'Finance', description: 'Finance, Procurement, Tendering', icon: Wallet },
+  { id: 'commercial', label: 'Commercial', description: 'CRM, Contracts, Bid Management', icon: Briefcase },
+  { id: 'communication', label: 'Communication', description: 'Contacts, Meetings, RFI', icon: Users },
+  { id: 'documentation', label: 'Documentation', description: 'CDE, Photos, Markups, Reports', icon: FileBarChart },
+  { id: 'quality', label: 'Quality & Safety', description: 'Validation, Inspections, NCR, Safety', icon: ShieldCheck },
+  { id: 'regional', label: 'Regional Standards', description: 'Regional exchange modules', icon: Globe },
+];
+
+function NavigationVisibilityTab() {
+  const { t } = useTranslation();
+  const { hiddenGroups, toggleGroup, showAll } = useNavVisibilityStore();
+  const hiddenCount = hiddenGroups.size;
+
+  return (
+    <div className="animate-card-in" style={{ animationDelay: '60ms' }}>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-0.5">
+            {t('modules.nav_sections', { defaultValue: 'Sidebar Sections' })}
+          </h2>
+          <p className="text-xs text-content-tertiary">
+            {t('modules.nav_sections_desc', {
+              defaultValue: 'Toggle which navigation groups are visible in the sidebar. Hidden sections are removed from the menu but their features remain accessible.',
+            })}
+          </p>
+        </div>
+        {hiddenCount > 0 && (
+          <button
+            onClick={showAll}
+            className="shrink-0 text-xs text-oe-blue hover:underline"
+          >
+            {t('modules.nav_show_all', { defaultValue: 'Show all' })}
+          </button>
+        )}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {NAV_GROUPS.map((group) => {
+          const Icon = group.icon;
+          const hidden = hiddenGroups.has(group.id);
+          return (
+            <div
+              key={group.id}
+              className={clsx(
+                'flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all',
+                hidden
+                  ? 'border-border-light/50 bg-surface-secondary/50 opacity-60 hover:opacity-80'
+                  : 'border-border-light bg-surface-elevated hover:border-border',
+              )}
+            >
+              <div
+                className={clsx(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                  hidden ? 'bg-surface-tertiary text-content-quaternary' : 'bg-oe-blue-subtle text-oe-blue',
+                )}
+              >
+                <Icon size={15} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-medium text-content-primary truncate block">{group.label}</span>
+                <span className="text-2xs text-content-tertiary line-clamp-1">{group.description}</span>
+              </div>
+              <button
+                onClick={() => toggleGroup(group.id)}
+                role="switch"
+                aria-checked={!hidden}
+                aria-label={`${hidden ? t('common.show', { defaultValue: 'Show' }) : t('common.hide', { defaultValue: 'Hide' })} ${group.label}`}
+                className="shrink-0"
+              >
+                <div
+                  className={clsx(
+                    'relative h-5 w-9 rounded-full transition-colors duration-200',
+                    hidden ? 'bg-content-quaternary/40' : 'bg-oe-blue',
+                  )}
+                >
+                  <div
+                    className={clsx(
+                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+                      hidden ? 'translate-x-0.5' : 'translate-x-[18px]',
+                    )}
+                  />
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {hiddenCount > 0 && (
+        <p className="mt-4 text-xs text-content-tertiary">
+          {t('modules.nav_hidden_count', {
+            defaultValue: '{{count}} section(s) hidden from the sidebar.',
+            count: hiddenCount,
+          })}
+        </p>
+      )}
     </div>
   );
 }

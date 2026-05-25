@@ -13,11 +13,18 @@
   --__rev-c: "4443432d4357494352";
   --__lc-rev: 0x4f452d3236;
   /* Brand */
-  --oe-blue: #0071e3;
-  --oe-blue-hover: #0077ed;
-  --oe-blue-active: #006edb;
-  --oe-blue-dark: #005bb5;
-  --oe-blue-subtle: #e8f2fe;
+  /* Executive Command — primary action colour (Bright Turquoise) */
+  --oe-blue: #10CFC9;
+  --oe-blue-hover: #0eb8b2;
+  --oe-blue-active: #0ca8a2;
+  --oe-blue-dark: #0a9490;
+  --oe-blue-subtle: #e0fafa;
+
+  /* EC brand tokens */
+  --ec-navy: #16315E;
+  --ec-navy-hover: #1e3f73;
+  --ec-action: #10CFC9;
+  --ec-bg: #F4F5F7;
 
   /* Surfaces */
   --oe-bg: #ffffff;
@@ -76,11 +83,10 @@
   --oe-space-12: 48px;
   --oe-space-16: 64px;
 
-  /* Typography */
-  --oe-font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --oe-font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'Cascadia Code', Menlo, Monaco,
-    Consolas, monospace;
+  /* Typography — Executive Command: Space Grotesk headings, IBM Plex Sans body */
+  --oe-font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --oe-font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  --oe-font-mono: 'IBM Plex Mono', 'SF Mono', SFMono-Regular, ui-monospace, Menlo, monospace;
 
   /* Transitions */
   --oe-transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -96,6 +102,28 @@
   --oe-header-height: 52px;
   --oe-content-max-width: 1440px;
 }
+
+/* ── EC Sidebar scope — navy bg, white text, turquoise active ────────── */
+/* Applied by adding .ec-sidebar to the <aside>. All existing Tailwind      */
+/* utility classes (bg-surface-primary, text-content-secondary, etc.)       */
+/* automatically resolve to the overridden values inside this scope.        */
+.ec-sidebar {
+  --oe-bg:           #16315E;
+  --oe-bg-secondary: #1e3f73;
+  --oe-bg-tertiary:  #162d56;
+  --oe-bg-elevated:  #1e3f73;
+  --oe-text-primary:    #ffffff;
+  --oe-text-secondary:  #94a3b8;
+  --oe-text-tertiary:   #64748b;
+  --oe-text-quaternary: #475569;
+  --oe-border:       rgba(255,255,255,0.08);
+  --oe-border-light: rgba(255,255,255,0.06);
+  --oe-blue:         #10CFC9;
+  --oe-blue-subtle:  rgba(16,207,201,0.18);
+}
+
+/* ── Page background: EC off-white ─────────────────────────────────────── */
+body { background-color: var(--ec-bg, #F4F5F7); }
 
 /* ── Dark Mode ─────────────────────────────────────────────────────────── */
 

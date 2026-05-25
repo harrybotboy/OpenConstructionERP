@@ -28,6 +28,7 @@ import { SettingsPage } from '@/features/settings';
 import { DatabaseSetupPage } from '@/features/setup';
 import { IntegrationsPage } from '@/features/integrations';
 import { AboutPage } from '@/features/about/AboutPage';
+import { ApprovalsPage } from '@/features/approvals/ApprovalsPage';
 import { QuickEstimatePage } from '@/features/ai';
 import { Logo, ShortcutsDialog, CommandPalette, ToastContainer, ErrorBoundary, NotFoundPage, OnboardingTour, OfflineBanner, PWAInstallPrompt } from '@/shared/ui';
 import GlobalSearchModal from '@/features/search/GlobalSearchModal';
@@ -521,6 +522,7 @@ export default function App() {
 
         {/* App — all protected, all real pages */}
         <Route path="/" element={<P title="Dashboard"><DashboardPage /></P>} />
+        <Route path="/approvals" element={<P title="Command Center"><ApprovalsPage /></P>} />
 
         <Route path="/ai-estimate" element={<P title="AI Quick Estimate"><QuickEstimatePage /></P>} />
         <Route path="/ai-agents" element={<P title="AI Agents"><AgentsPage /></P>} />

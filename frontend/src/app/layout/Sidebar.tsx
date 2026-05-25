@@ -89,6 +89,7 @@ import {
   SIDEBAR_WIDTH_FULL,
   SIDEBAR_WIDTH_ICON,
 } from '@/stores/useSidebarCollapseStore';
+import { useNavVisibilityStore } from '@/stores/useNavVisibilityStore';
 import { RequestCustomModuleDialog } from '@/features/modules/RequestCustomModuleDialog';
 import {
   useActiveProjectProfile,
@@ -129,6 +130,7 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard },
+      { labelKey: 'nav.approvals', to: '/approvals', icon: ClipboardCheck },
       { labelKey: 'projects.title', to: '/projects', icon: FolderOpen, tourId: 'projects' },
       // Files lives in Overview because it's the unified entry point
       // into a project's documents, photos, BIM and DWG — users land
@@ -485,6 +487,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const toggleIconified = useSidebarCollapseStore((s) => s.toggle);
   const isRTL = useIsRTL();
   const userRole = useAuthStore((s) => s.userRole);
+  const isGroupHidden = useNavVisibilityStore((s) => s.isGroupHidden);
 
   // Role-gate the bottom nav. Items without a `roleGate` always show;
   // gated items only render when the current JWT role matches. The
@@ -648,7 +651,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside
       data-tour="sidebar"
-      className="oe-sidebar relative flex h-full w-sidebar flex-col bg-surface-primary"
+      className="oe-sidebar ec-sidebar relative flex h-full w-sidebar flex-col bg-surface-primary"
       style={{
         // Right-edge depth — 1px hairline + a soft 12px fade. Replaces
         // the hard `border-r border-border-light` for a Linear/Vercel
@@ -864,6 +867,8 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         {navGroups.map((group) => {
           // Hide entire group in simple mode if flagged
           if (group.hideInSimple && !isAdvanced) return null;
+          // Hide groups toggled off by user in /modules Navigation tab
+          if (isGroupHidden(group.id)) return null;
 
           // Merge static items + dynamic module items for this group
           const dynamicItems: NavItem[] = getModuleNavItems(group.id)

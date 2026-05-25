@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Command - Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#10CFC9", // Brand Turquoise
+                        "brand-navy": "#16315E", // Biscay Navy
+                        "background-light": "#F4F5F7", // Cool Grey
+                        "background-dark": "#0F172A", // Dark mode equivalent
+                        "surface": "#FFFFFF",
+                        "risk-high": "#EF4444",
+                        "risk-med": "#F59E0B",
+                        "risk-low": "#10B981",
+                        "slate-900": "#0F172A",
+                        "slate-500": "#64748B",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["IBM Plex Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px", // Sharp aesthetic
+                        "sm": "2px",
+                        "lg": "4px",
+                        "xl": "8px",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        "lift": "0 4px 6px -1px rgba(22, 49, 94, 0.1)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .card-shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-body antialiased overflow-hidden text-slate-900">
+<!-- Top Navigation Bar -->
+<header class="h-16 bg-brand-navy flex items-center justify-between px-5 sticky top-0 z-50 shadow-md">
+<div class="flex flex-col">
+<span class="text-xs text-primary font-mono tracking-widest uppercase opacity-80">Coteccons HQ</span>
+<h1 class="text-white font-display font-bold text-lg leading-tight tracking-tight">Good Morning, David</h1>
+</div>
+<button class="relative flex items-center justify-center w-10 h-10 rounded-full border border-white/20 text-white hover:bg-white/10 active:bg-white/20 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">filter_list</span>
+<!-- Notification dot -->
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-brand-navy"></span>
+</button>
+</header>
+<!-- Sticky Date Strip -->
+<div class="h-8 bg-slate-200 dark:bg-slate-800 flex items-center justify-between px-5 sticky top-16 z-40 border-b border-slate-300 dark:border-slate-700">
+<span class="font-display font-bold text-xs tracking-wider text-slate-600 dark:text-slate-400 uppercase">Today</span>
+<span class="font-mono text-xs font-medium text-risk-high tracking-tight">3 URGENT ACTIONS</span>
+</div>
+<!-- Main Feed (Infinite Scroll) -->
+<main class="flex-1 overflow-y-auto no-scrollbar pb-24 relative">
+<!-- List Container -->
+<div class="flex flex-col gap-[1px] bg-slate-200 dark:bg-slate-800">
+<!-- Card 1: High Risk (Red) -->
+<article class="group relative w-full h-[140px] bg-white dark:bg-slate-900 overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-risk-high"></div>
+<div class="flex flex-col h-full justify-between p-4 pl-5">
+<!-- Header Row -->
+<div class="flex items-start justify-between w-full">
+<span class="font-display font-medium text-xs tracking-widest text-slate-500 uppercase">Payment Order</span>
+<span class="font-mono font-bold text-base text-brand-navy dark:text-white tracking-tight">$1,250,000</span>
+</div>
+<!-- Title -->
+<h2 class="font-display font-bold text-xl leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 pr-4 -mt-1">
+                        Steel Structure Procurement - Phase 2 Approval Request
+                    </h2>
+<!-- Meta Row -->
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-risk-high text-sm">schedule</span>
+<span class="font-mono text-xs font-medium text-risk-high">Due 2h ago</span>
+</div>
+<span class="font-body text-xs font-medium text-slate-500">Steel Corp Ltd</span>
+</div>
+</div>
+<!-- Swipe Action Hints (Visual only for mockup) -->
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-slate-100 dark:bg-slate-800 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</article>
+<!-- Card 2: Medium Risk (Amber) -->
+<article class="group relative w-full h-[140px] bg-white dark:bg-slate-900 overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-risk-med"></div>
+<div class="flex flex-col h-full justify-between p-4 pl-5">
+<div class="flex items-start justify-between w-full">
+<span class="font-display font-medium text-xs tracking-widest text-slate-500 uppercase">Contract Variation</span>
+<span class="font-mono font-bold text-base text-brand-navy dark:text-white tracking-tight">$85,000</span>
+</div>
+<h2 class="font-display font-bold text-xl leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 pr-4 -mt-1">
+                        Site Logistics Adjustment &amp; Additional Security Detail
+                    </h2>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-risk-med text-sm">schedule</span>
+<span class="font-mono text-xs font-medium text-risk-med">Due in 4h</span>
+</div>
+<span class="font-body text-xs font-medium text-slate-500">Beton 6 Corp</span>
+</div>
+</div>
+</article>
+<!-- Card 3: Low Risk (Green) -->
+<article class="group relative w-full h-[140px] bg-white dark:bg-slate-900 overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-risk-low"></div>
+<div class="flex flex-col h-full justify-between p-4 pl-5">
+<div class="flex items-start justify-between w-full">
+<span class="font-display font-medium text-xs tracking-widest text-slate-500 uppercase">Expense Claim</span>
+<span class="font-mono font-bold text-base text-brand-navy dark:text-white tracking-tight">$450.00</span>
+</div>
+<h2 class="font-display font-bold text-xl leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 pr-4 -mt-1">
+                        Monthly Site Inspection Travel - HCMC to Da Nang
+                    </h2>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
+<span class="font-mono text-xs font-medium text-slate-500">Due Tomorrow</span>
+</div>
+<span class="font-body text-xs font-medium text-slate-500">Operations Team</span>
+</div>
+</div>
+</article>
+<!-- Card 4: High Risk (Red) -->
+<article class="group relative w-full h-[140px] bg-white dark:bg-slate-900 overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-risk-high"></div>
+<div class="flex flex-col h-full justify-between p-4 pl-5">
+<div class="flex items-start justify-between w-full">
+<span class="font-display font-medium text-xs tracking-widest text-slate-500 uppercase">Legal Review</span>
+<span class="font-mono font-bold text-base text-brand-navy dark:text-white tracking-tight">NON-STD</span>
+</div>
+<h2 class="font-display font-bold text-xl leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 pr-4 -mt-1">
+                        Diamond Island Project - Force Majeure Clause Update
+                    </h2>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-risk-high text-sm">gavel</span>
+<span class="font-mono text-xs font-medium text-risk-high">Critical Review</span>
+</div>
+<span class="font-body text-xs font-medium text-slate-500">Legal Dept.</span>
+</div>
+</div>
+</article>
+<!-- Card 5: Low Risk (Green) -->
+<article class="group relative w-full h-[140px] bg-white dark:bg-slate-900 overflow-hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-risk-low"></div>
+<div class="flex flex-col h-full justify-between p-4 pl-5">
+<div class="flex items-start justify-between w-full">
+<span class="font-display font-medium text-xs tracking-widest text-slate-500 uppercase">PO Approval</span>
+<span class="font-mono font-bold text-base text-brand-navy dark:text-white tracking-tight">$22,500</span>
+</div>
+<h2 class="font-display font-bold text-xl leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 pr-4 -mt-1">
+                        Q3 Office Supplies &amp; IT Peripherals Restock
+                    </h2>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
+<span class="font-mono text-xs font-medium text-slate-500">Due in 2 days</span>
+</div>
+<span class="font-body text-xs font-medium text-slate-500">Procurement</span>
+</div>
+</div>
+</article>
+</div>
+<!-- "Caught Up" State Indicator (Bottom of list) -->
+<div class="flex flex-col items-center justify-center py-12 opacity-50">
+<span class="material-symbols-outlined text-slate-400 text-3xl mb-2">check_circle</span>
+<p class="font-display text-sm text-slate-500 font-medium">You're all caught up</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="h-[80px] bg-white dark:bg-brand-navy border-t border-slate-200 dark:border-slate-700 flex items-start justify-around px-2 pt-3 pb-6 fixed bottom-0 left-0 right-0 z-50">
+<a class="flex flex-col items-center justify-center gap-1 w-16 group" href="#">
+<div class="text-brand-navy dark:text-primary transition-colors flex items-center justify-center h-7 w-7 rounded-sm group-hover:bg-slate-100 dark:group-hover:bg-white/10">
+<span class="material-symbols-outlined font-variation-settings-fill" style="font-variation-settings: 'FILL' 1, 'wght' 400;">dashboard</span>
+</div>
+<span class="text-[10px] font-mono font-medium text-brand-navy dark:text-primary tracking-wide">FEED</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 w-16 group" href="#">
+<div class="text-slate-400 dark:text-slate-400 transition-colors flex items-center justify-center h-7 w-7 rounded-sm group-hover:bg-slate-100 dark:group-hover:bg-white/10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 400;">analytics</span>
+</div>
+<span class="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-400 tracking-wide">DATA</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 w-16 group" href="#">
+<div class="text-slate-400 dark:text-slate-400 transition-colors flex items-center justify-center h-7 w-7 rounded-sm group-hover:bg-slate-100 dark:group-hover:bg-white/10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 400;">description</span>
+</div>
+<span class="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-400 tracking-wide">DOCS</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 w-16 group" href="#">
+<div class="text-slate-400 dark:text-slate-400 transition-colors flex items-center justify-center h-7 w-7 rounded-sm group-hover:bg-slate-100 dark:group-hover:bg-white/10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 400;">account_circle</span>
+</div>
+<span class="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-400 tracking-wide">PROFILE</span>
+</a>
+</nav>
+<!-- Floating Action Button (Optional - Quick Add context, hidden on scroll usually but visible here for completeness of "Command" feel) -->
+<!-- Not strictly in PRD but common in these apps. Left out to adhere strictly to PRD "Command Center" description which focuses on review not creation. -->
+</body></html>

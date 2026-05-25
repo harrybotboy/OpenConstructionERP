@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Command - Payment Detail</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "brand-navy": "#16315E",
+                        "brand-cyan": "#10CFC9",
+                        "brand-bg": "#F4F5F7",
+                        "brand-surface": "#FFFFFF",
+                        "risk-high": "#EF4444",
+                        "risk-med": "#F59E0B",
+                        "risk-low": "#10B981",
+                        "slate-900": "#0F172A",
+                        "slate-500": "#64748B",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["IBM Plex Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "4px", // Soft radius per design system
+                        "sharp": "0px",
+                    },
+                    boxShadow: {
+                        "lift": "0 4px 6px -1px rgba(22, 49, 94, 0.1)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-brand-bg text-slate-900 font-body antialiased min-h-screen flex flex-col relative">
+<!-- Top Navigation -->
+<nav class="bg-brand-navy text-white px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-50 h-16">
+<button aria-label="Go back" class="flex items-center justify-center p-2 -ml-2 hover:bg-white/10 rounded transition-colors">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h2 class="font-display font-medium text-sm tracking-[0.05em] uppercase opacity-90">Payment Order #8921</h2>
+<button aria-label="Menu" class="flex items-center justify-center p-2 -mr-2 hover:bg-white/10 rounded transition-colors">
+<span class="material-symbols-outlined text-[24px]">more_vert</span>
+</button>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Hero Section: Amount & Risk -->
+<div class="bg-brand-surface pt-8 pb-8 px-6 border-b border-gray-100 shadow-sm relative overflow-hidden">
+<!-- Subtle background pattern -->
+<div class="absolute top-0 right-0 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[180px] -mr-10 -mt-10">attach_money</span>
+</div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-risk-high/10 border border-risk-high/20 rounded mb-4">
+<span class="material-symbols-outlined text-risk-high text-[18px]">warning</span>
+<span class="text-risk-high text-xs font-bold uppercase tracking-wider font-display">Over Budget +12%</span>
+</div>
+<h1 class="text-slate-900 font-display font-bold text-5xl tracking-tight mb-2">$450,000<span class="text-3xl text-slate-400">.00</span></h1>
+<p class="text-slate-500 font-mono text-sm">REQ-2023-8921 • Due Today</p>
+</div>
+</div>
+<!-- Budget Visualization Widget -->
+<div class="m-4 bg-brand-surface rounded shadow-lift border border-gray-100 p-5">
+<div class="flex justify-between items-end mb-3">
+<h3 class="font-display text-sm font-bold uppercase tracking-wide text-slate-500">Budget Impact</h3>
+<span class="font-mono text-xs text-risk-high font-medium">112% Utilization</span>
+</div>
+<!-- Progress Bar Container -->
+<div class="h-3 w-full bg-slate-100 rounded-sm overflow-hidden flex mb-4 relative">
+<!-- Safe Budget -->
+<div class="h-full bg-brand-cyan w-[85%]"></div>
+<!-- Warning/Variance -->
+<div class="h-full bg-risk-high w-[27%] relative">
+<!-- Striped pattern overlay for variance -->
+<div class="absolute inset-0 w-full h-full" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px);"></div>
+</div>
+</div>
+<div class="flex justify-between text-xs font-mono text-slate-500">
+<div class="flex flex-col gap-1">
+<span>Allocated</span>
+<span class="text-slate-900 font-bold">$400,000.00</span>
+</div>
+<div class="flex flex-col gap-1 items-end">
+<span>Variance</span>
+<span class="text-risk-high font-bold">+$50,000.00</span>
+</div>
+</div>
+</div>
+<!-- Vendor Verification Card -->
+<div class="mx-4 mb-4 bg-brand-surface rounded shadow-lift border-l-4 border-brand-cyan p-5 flex items-start justify-between">
+<div>
+<h3 class="font-display text-xs font-bold uppercase tracking-wide text-slate-400 mb-1">Payee</h3>
+<div class="flex items-center gap-2 mb-1">
+<p class="text-lg font-semibold text-slate-900 leading-tight">Steel Corp Ltd.</p>
+<span class="material-symbols-outlined text-brand-cyan text-[20px] fill-current" title="Verified Vendor">verified</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-slate-500 font-mono">
+<span class="material-symbols-outlined text-[16px]">account_balance</span>
+<span>Vietcombank •••• 8829</span>
+</div>
+</div>
+<div class="h-10 w-10 bg-brand-cyan/10 rounded flex items-center justify-center text-brand-cyan">
+<span class="material-symbols-outlined">business</span>
+</div>
+</div>
+<!-- Data Grid: Key Details -->
+<div class="grid grid-cols-2 gap-4 px-4 mb-6">
+<div class="bg-brand-surface p-4 rounded border border-gray-100 shadow-sm">
+<p class="font-display text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Project</p>
+<p class="font-medium text-slate-900 text-sm">Landmark 81</p>
+<p class="font-mono text-xs text-slate-500 mt-1">P-8821</p>
+</div>
+<div class="bg-brand-surface p-4 rounded border border-gray-100 shadow-sm">
+<p class="font-display text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Cost Center</p>
+<p class="font-medium text-slate-900 text-sm">Materials</p>
+<p class="font-mono text-xs text-slate-500 mt-1">MAT-STEEL</p>
+</div>
+<div class="bg-brand-surface p-4 rounded border border-gray-100 shadow-sm col-span-2 flex items-center justify-between">
+<div>
+<p class="font-display text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Invoice</p>
+<p class="font-mono text-sm text-slate-900">INV-2023-10-24-001.pdf</p>
+</div>
+<button class="text-brand-cyan hover:text-brand-navy transition-colors flex items-center gap-1 text-sm font-medium">
+                    View
+                    <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+</div>
+<!-- Approver Chain (Brief) -->
+<div class="px-6 mb-8">
+<h3 class="font-display text-xs font-bold uppercase tracking-wide text-slate-400 mb-4">Approval Chain</h3>
+<div class="relative pl-4 border-l-2 border-gray-200 space-y-6">
+<!-- Item 1 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-brand-cyan ring-4 ring-brand-bg"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm font-medium text-slate-900">Project Manager</p>
+<p class="text-xs text-slate-500">Approved Oct 24, 09:30 AM</p>
+</div>
+<div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden" data-alt="Avatar of Project Manager">
+<img alt="PM Avatar" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3hheN402N3QuLOCSy7Nh2oQyOTbbaonEHElvvXOZUZoU6Nml18Pio9Iuw2JEOG3EoJV6BdTii93UQ2AGRYkkelZMHulzTa66jn8GN7FIdGlWL7FoTRUG8wif1U-w0xS7K9V3tqIsttbBo6jwLsox7hWQ8obclKTdODqXKNga5hQL6syLVEyWyKcjpbvBKbuv0HByh2jcCFDt66TMkI5Eqea7GZ1hbTWtoN1KaGC1pgMvDlqtFTPBl8wGunRn-tWoMpFoAQ2DcM71S"/>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-gray-300 ring-4 ring-brand-bg"></div>
+<div class="flex justify-between items-start opacity-60">
+<div>
+<p class="text-sm font-medium text-slate-900">CFO</p>
+<p class="text-xs text-slate-500">Pending Review</p>
+</div>
+<div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden" data-alt="Avatar of CFO">
+<img alt="CFO Avatar" class="h-full w-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCds1XT4ccOtTEkguiaU0-ROV8t8v1fmkcP-ix7pz5HC-oXXvejKA4Ekgf66B3KNfUFB0Zqmoyj7TLjsD4FGC177mWuSe9-HjLI2GDwVfMGFV8e226n5o749-v4ruWG7xYrt91sTEhrmkOWgrpgFMNaSy1g0D7KJY8ykn7-JaJSnKWkF6B3O4bHo0IDGMYefUc3bs9gmxpWYO24gLkGc_iQ-b4zQ2aV02xqQjgNOmMrSmTjY2gKN1TAQdPd8P9-sU25vaTUjKg1j3YU"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sticky Action Footer -->
+<footer class="fixed bottom-0 left-0 w-full h-[88px] bg-brand-navy px-4 py-4 flex items-center gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+<!-- Reject Button -->
+<button class="h-12 w-[30%] border border-white/20 hover:bg-white/5 text-white font-display font-medium rounded transition-colors flex items-center justify-center gap-2 group active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px] group-hover:text-risk-high transition-colors">close</span>
+            Reject
+        </button>
+<!-- Approve Button -->
+<button class="h-12 w-[70%] bg-brand-cyan hover:bg-[#0EBDB7] text-brand-navy font-display font-bold rounded shadow-lg flex items-center justify-center gap-2 active:scale-95 duration-200 relative overflow-hidden group">
+<!-- Shine effect -->
+<div class="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>
+<span class="material-symbols-outlined text-[20px] font-bold relative z-20">check</span>
+<span class="relative z-20">Authorize Payment</span>
+</button>
+</footer>
+</body></html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Command - Action Sheet</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@300;400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#10CFC9", // Bright Turquoise
+                        "brand-navy": "#16315E", // Biscay Navy
+                        "background-light": "#F4F5F7", // Cool Grey
+                        "risk-high": "#EF4444",
+                        "text-main": "#0F172A",
+                        "text-muted": "#64748B",
+                        "surface": "#FFFFFF",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["IBM Plex Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "none": "0px",
+                        "sm": "2px",
+                        "DEFAULT": "4px",
+                        "md": "6px",
+                        "lg": "8px",
+                        "full": "9999px",
+                    },
+                    boxShadow: {
+                        'lift': '0 4px 6px -1px rgba(22, 49, 94, 0.1)',
+                        'up': '0 -4px 20px -5px rgba(0, 0, 0, 0.1)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal scrolling chips */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Custom slider styling for the slide-to-confirm */
+        .slide-track {
+            background: linear-gradient(90deg, #10CFC9 0%, #16315E 0%);
+            transition: background 0.1s ease;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-body text-text-main h-screen w-full overflow-hidden flex flex-col items-center justify-center relative">
+<!-- Background Mockup Content (Blurred to simulate overlay context) -->
+<!-- This simulates the "Command Center" or "Detail View" visible behind the modal -->
+<div aria-hidden="true" class="absolute inset-0 w-full h-full flex flex-col opacity-20 pointer-events-none blur-[2px]">
+<!-- Header -->
+<div class="h-16 bg-brand-navy w-full flex items-center justify-between px-6">
+<div class="h-4 w-32 bg-white/20 rounded-sm"></div>
+<div class="h-8 w-8 rounded-full border border-white/30"></div>
+</div>
+<!-- Feed content -->
+<div class="p-4 space-y-4">
+<div class="h-32 bg-white w-full border-l-4 border-risk-high shadow-lift p-4">
+<div class="flex justify-between mb-2">
+<div class="h-4 w-24 bg-gray-200"></div>
+<div class="h-4 w-16 bg-gray-300"></div>
+</div>
+<div class="h-6 w-3/4 bg-gray-800 mb-4"></div>
+<div class="h-4 w-1/2 bg-gray-200"></div>
+</div>
+<div class="h-32 bg-white w-full border-l-4 border-primary shadow-lift p-4"></div>
+<div class="h-32 bg-white w-full border-l-4 border-primary shadow-lift p-4"></div>
+</div>
+</div>
+<!-- Dark Overlay Backdrop -->
+<div class="absolute inset-0 bg-brand-navy/60 backdrop-blur-sm z-10 transition-opacity duration-300"></div>
+<!-- ACTION SHEET COMPONENT -->
+<!-- Positioned at bottom, animating up -->
+<div class="absolute bottom-0 left-0 w-full z-20 flex flex-col justify-end h-auto max-h-[85vh]">
+<!-- Sheet Container -->
+<div class="w-full bg-surface shadow-up flex flex-col rounded-t-[4px] overflow-hidden">
+<!-- Drag Handle Area -->
+<div class="w-full flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
+<div class="w-12 h-1 bg-gray-300 rounded-full"></div>
+</div>
+<!-- Header Section -->
+<div class="px-6 pt-4 pb-2">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-display font-bold text-2xl tracking-tight text-brand-navy uppercase leading-tight">
+                            Confirm Rejection
+                        </h2>
+<p class="text-text-muted text-sm mt-1 font-body">
+                            This action will flag the record for review.
+                        </p>
+</div>
+<button class="text-text-muted hover:text-brand-navy transition-colors p-1">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-px w-full bg-gray-100 my-2"></div>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto px-6 py-2 space-y-6 pb-6">
+<!-- Reason Selector -->
+<div class="space-y-3">
+<label class="text-xs font-mono font-medium text-text-muted uppercase tracking-wider block">
+                        Select Reason
+                    </label>
+<!-- Horizontal Scrolling Chips -->
+<div class="flex gap-3 overflow-x-auto hide-scroll pb-1 -mx-6 px-6">
+<!-- Active State Chip -->
+<button class="flex-shrink-0 px-4 py-2 bg-risk-high/10 border-2 border-risk-high text-risk-high font-medium text-sm rounded-sm whitespace-nowrap transition-all">
+                            Over Budget
+                        </button>
+<!-- Default State Chips -->
+<button class="flex-shrink-0 px-4 py-2 bg-white border border-gray-200 text-text-main font-medium text-sm rounded-sm hover:border-brand-navy hover:text-brand-navy whitespace-nowrap transition-all">
+                            Missing Info
+                        </button>
+<button class="flex-shrink-0 px-4 py-2 bg-white border border-gray-200 text-text-main font-medium text-sm rounded-sm hover:border-brand-navy hover:text-brand-navy whitespace-nowrap transition-all">
+                            Wrong Vendor
+                        </button>
+<button class="flex-shrink-0 px-4 py-2 bg-white border border-gray-200 text-text-main font-medium text-sm rounded-sm hover:border-brand-navy hover:text-brand-navy whitespace-nowrap transition-all">
+                            Duplicate
+                        </button>
+<button class="flex-shrink-0 px-4 py-2 bg-white border border-gray-200 text-text-main font-medium text-sm rounded-sm hover:border-brand-navy hover:text-brand-navy whitespace-nowrap transition-all">
+                            Other
+                        </button>
+</div>
+</div>
+<!-- Comment Input -->
+<div class="space-y-3">
+<label class="text-xs font-mono font-medium text-text-muted uppercase tracking-wider block" for="comment">
+                        Internal Note
+                    </label>
+<div class="relative">
+<textarea class="w-full bg-background-light border-2 border-transparent focus:border-brand-navy focus:bg-white focus:ring-0 rounded-sm text-sm text-text-main p-3 font-body placeholder-gray-400 transition-colors resize-none" id="comment" placeholder="Add context for the rejection (optional)..." rows="3"></textarea>
+<!-- Optional Attachment Icon inside textarea -->
+<button class="absolute bottom-3 right-3 text-text-muted hover:text-brand-navy transition-colors">
+<span class="material-symbols-outlined text-lg">attach_file</span>
+</button>
+</div>
+</div>
+<!-- Spacer for visual breathing room before sticky bottom -->
+<div class="h-2"></div>
+</div>
+<!-- Sticky Bottom Action Area -->
+<div class="px-6 pt-2 pb-8 bg-surface border-t border-gray-50">
+<!-- Slide to Confirm Component -->
+<div class="relative w-full h-[56px] bg-brand-navy rounded-sm overflow-hidden select-none group cursor-pointer">
+<!-- Text Label (Behind the slider) -->
+<div class="absolute inset-0 flex items-center justify-center z-0">
+<span class="font-display font-bold text-white/40 tracking-widest text-sm uppercase animate-pulse">
+                            Slide to Reject
+                        </span>
+</div>
+<!-- Slider Progress Track (Invisible initially, reveals as dragged) -->
+<!-- In a real app, JS would control width. Here we simulate 10% drag start -->
+<div class="absolute left-0 top-0 bottom-0 bg-risk-high w-[15%] z-10 transition-all duration-75 ease-out"></div>
+<!-- Draggable Handle -->
+<div class="absolute top-[4px] bottom-[4px] left-[4px] w-[48px] bg-white rounded-sm shadow-md z-20 flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-transform">
+<span class="material-symbols-outlined text-brand-navy">chevron_right</span>
+</div>
+<!-- Interactive overlay for demo purposes (simulates the track area) -->
+<div class="absolute inset-0 z-30" title="Slide to confirm action"></div>
+</div>
+<!-- Cancel Action (Secondary) -->
+<div class="mt-4 text-center">
+<button class="text-xs font-mono text-text-muted hover:text-brand-navy uppercase tracking-wide border-b border-transparent hover:border-brand-navy transition-all">
+                        Cancel Action
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

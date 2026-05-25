@@ -1,0 +1,198 @@
+# Executive Command (Desktop)
+
+## Product Overview
+
+**The Pitch:** A high-velocity mission control center for Coteccons executives to process high-stakes approvals with surgical precision. Moves beyond simple sign-offs to enable forensic document analysis and rapid-fire bulk actions in a single, dense interface.
+
+**For:** C-Suite and Senior Directors who review complex construction contracts and manage high-volume procurement requests where error is not an option.
+
+**Device:** Desktop (Optimized for 1440px+ viewports)
+
+**Design Direction:** 'Corporate Precision'. High-contrast, data-dense, Swiss-grid inspired functionality. It eschews white space for utility, using rigid lines and split panes to maximize information density.
+
+**Inspired by:** Bloomberg Terminal, Linear (for shortcuts/density), Superhuman (for speed).
+
+---
+
+## Screens
+
+- **Global Dashboard:** High-level operational health, pending urgency, and risk heatmaps.
+- **Master-Detail Command Center:** The core workspace—3-pane layout for list processing and rapid review.
+- **Deep-Dive Analysis:** Full-screen split view comparing contract terms against standard policy deviations.
+- **Bulk Action Modal:** Confirmation gate for high-volume processing with summary stats.
+
+---
+
+## Key Flows
+
+**Flow: The Morning Clear-Down**
+
+1.  User enters **Master-Detail Command Center** -> sees sorted list of 14 "High Priority" requests.
+2.  User hits `J` / `K` to scan list -> Right pane updates instantly with AI Summary.
+3.  User identifies 5 "Low Risk" procurement items -> Selects via `X`, presses `A` (Approve).
+4.  User spots a complex Subcontractor Agreement -> Presses `Enter` for **Deep-Dive Analysis**.
+5.  User reviews "red-lined" deviations -> Adds comment via `C` -> Rejects via `R`.
+
+---
+
+<details>
+<summary>Design System</summary>
+
+## Color Palette
+
+- **Primary:** `#16315E` - Biscay Navy (Sidebar, Primary Buttons, Headers)
+- **Secondary:** `#10CFC9` - Bright Turquoise (Active states, Toggle switches, Primary accents)
+- **Background:** `#F4F6F8` - App Canvas / Slate Gray
+- **Surface:** `#FFFFFF` - Panels, Cards, Tables
+- **Text Primary:** `#0F172A` - Main content (Deep Navy/Black)
+- **Text Secondary:** `#64748B` - Metadata, labels
+- **Border:** `#E2E8F0` - Dividers, Table borders
+- **Risk High:** `#BE123C` - Crimson (Critical alerts)
+- **Risk Low:** `#059669` - Emerald (Safe/Approved)
+
+## Typography
+
+**Font Family:** *JetBrains Mono* (for data/code) paired with *Inter Tight* (for UI).
+
+- **Heading 1:** Inter Tight, 600, 20px (Panel Headers)
+- **Heading 2:** Inter Tight, 600, 16px (Section Labels)
+- **Data Mono:** JetBrains Mono, 500, 13px (IDs, Currencies, Dates)
+- **Body:** Inter Tight, 400, 14px (Summary text)
+- **Dense List:** Inter Tight, 500, 13px (Table rows)
+
+**Style Notes:**
+- **Zero-radius corners** on internal panes for maximum screen yield.
+- **4px radius** on interactive elements (buttons/inputs) only.
+- **1px borders** everywhere. Shadows are removed in favor of high-contrast borders to define hierarchy.
+
+## Design Tokens
+
+```css
+:root {
+  --color-navy: #16315E;
+  --color-turquoise: #10CFC9;
+  --color-bg: #F4F6F8;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --font-ui: 'Inter Tight', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 4px;
+  --radius-none: 0px;
+  --spacing-dense: 8px;
+  --height-header: 48px;
+}
+```
+
+</details>
+
+---
+
+<details>
+<summary>Screen Specifications</summary>
+
+### 1. Global Dashboard
+
+**Purpose:** Landing view providing immediate situational awareness of approval queues and bottlenecks.
+
+**Layout:** Single-scroll vertical dashboard. Top: KPI cards. Center: Split view (Urgency List vs. Approval Velocity Chart).
+
+**Key Elements:**
+- **KPI Ticker:** Row of 4 cards. "Pending Value" (Mono font, large), "Critical Requests" (Red), "Avg Approval Time", "Your Velocity".
+- **Risk Heatmap:** 3x3 grid visualizing pending requests by Value (Y-axis) vs. Risk Score (X-axis).
+- **"Next Up" Queue:** Condensed list of top 5 oldest pending items.
+
+**States:**
+- **Loading:** Skeleton pulses on KPI numbers.
+- **Zero State:** "All clear. No pending approvals." Illustration of a clean desk.
+
+**Interactions:**
+- **Click Heatmap Cell:** Navigates to Master-Detail view with pre-applied filters (e.g., High Value + High Risk).
+
+---
+
+### 2. Master-Detail Command Center (Core Screen)
+
+**Purpose:** The primary workspace. Triages hundreds of requests without page reloads.
+
+**Layout:** 3-Column Split.
+1.  **Nav (64px):** Collapsed Navy sidebar (Icons only).
+2.  **List (35% width):** High-density data grid.
+3.  **Preview (Remaining width):** Tabbed detail pane.
+
+**Key Elements:**
+- **The Grid (Middle Pane):**
+    - **Header:** Search input, filter chips (Dept, Value, Risk), Bulk Action toolbar (hidden until selection).
+    - **Rows:** 48px height. Columns: Checkbox, ID (Mono), Subject, Value, Dept, Risk Dot.
+    - **Active Row:** `#F1F5F9` background + Left border `#10CFC9` (4px solid).
+- **The Preview (Right Pane):**
+    - **AI Summary Header:** "Risk Assessment: Low". Bullet points of extracted terms.
+    - **Document Viewer:** Embedded PDF viewer.
+    - **Action Footer:** Sticky bottom bar. "Approve (A)", "Reject (R)", "More...".
+
+**Interactions:**
+- **Keyboard `J/K`:** Moves active state down/up the list. Preview pane updates instantly.
+- **Spacebar:** Toggles checkbox selection for bulk actions.
+- **`Enter`:** Expands Right Pane to full screen (Deep-Dive).
+
+**Responsive:**
+- **Desktop (<1200px):** Right pane collapses. Clicking a row slides pane over as an overlay.
+
+---
+
+### 3. Deep-Dive Analysis
+
+**Purpose:** Forensic review of complex contracts. Compares the document against policy.
+
+**Layout:** Full-screen Split View (50/50).
+
+**Key Elements:**
+- **Left Panel (The Truth):** The actual PDF/Contract document.
+- **Right Panel (The Analysis):**
+    - **Top:** "Policy Deviation Check".
+    - **Comparison List:** Scrollable list.
+        - **Item:** "Payment Terms".
+        - **Policy:** "Net 45 Days".
+        - **Contract:** "Net 30 Days" (Highlighted Yellow).
+    - **AI Insight:** "This deviation reduces working capital efficiency by 15 days."
+
+**Components:**
+- **Annotation Tool:** Floating toolbar on PDF (Highlight, Comment, Strikeout).
+- **Decision Widget:** Floating bottom-right card. Large "Approve" (Navy) and "Reject" (Ghost) buttons.
+
+**Interactions:**
+- **Click Deviation:** Auto-scrolls PDF on the left to the specific paragraph mentioned.
+
+---
+
+### 4. Bulk Action Modal
+
+**Purpose:** Safety gate before committing mass changes.
+
+**Layout:** Centered Modal (600px width), heavy backdrop blur.
+
+**Key Elements:**
+- **Header:** "Approve 12 Items?"
+- **Summary Stats:** "Total Value: $4.2M" | "Departments: Procurement, HR".
+- **Risk Warning:** If any selected item is High Risk -> "⚠️ Warning: 2 items are flagged as High Risk. Are you sure?"
+- **Authentication:** Biometric prompt / PIN input field required for >$1M total value.
+
+**Components:**
+- **List Preview:** Scrollable list inside modal showing just IDs and Titles.
+- **Confirm Button:** `#10CFC9` Background, Black Text, "Confirm Approval (Cmd+Enter)".
+
+</details>
+
+---
+
+<details>
+<summary>Build Guide</summary>
+
+**Stack:** HTML5, Tailwind CSS v3, React (for state management of split panes).
+
+**Build Order:**
+1.  **Design System Setup:** Define `Inter Tight` and `JetBrains Mono`. configure Tailwind colors for `navy` and `turquoise`. Set up the 3-pane flexbox layout skeleton.
+2.  **Master-Detail Command Center:** This is the MVP. Build the grid, the keyboard navigation logic, and the static preview pane.
+3.  **Deep-Dive Analysis:** Implement the split-screen comparison logic.
+4.  **Global Dashboard:** Build charts and high-level routing last.
+
+</details>

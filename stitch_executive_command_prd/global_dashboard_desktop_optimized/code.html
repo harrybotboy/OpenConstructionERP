@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Global Dashboard - Executive Command</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            DEFAULT: "#16315E", // Biscay Navy
+                            light: "#2A4B82",
+                            dark: "#0F2242"
+                        },
+                        turquoise: {
+                            DEFAULT: "#10CFC9", // Bright Turquoise
+                            dim: "#0BA6A1"
+                        },
+                        background: {
+                            light: "#F4F6F8", // App Canvas
+                            dark: "#111b21",
+                            surface: "#FFFFFF"
+                        },
+                        risk: {
+                            high: "#BE123C", // Crimson
+                            low: "#059669", // Emerald
+                        },
+                        border: "#E2E8F0",
+                        text: {
+                            primary: "#0F172A",
+                            secondary: "#64748B"
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Inter Tight"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        display: ['"Inter"', 'sans-serif']
+                    },
+                    borderRadius: {
+                        DEFAULT: "4px",
+                        sm: "2px",
+                        md: "4px",
+                        lg: "8px",
+                    },
+                    boxShadow: {
+                        'none': 'none',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for data-dense feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F4F6F8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8; 
+        }
+        
+        .grid-bg {
+            background-image: linear-gradient(to right, #E2E8F0 1px, transparent 1px),
+                              linear-gradient(to bottom, #E2E8F0 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-text-primary font-sans antialiased overflow-hidden h-screen flex flex-col">
+<!-- App Layout -->
+<div class="flex h-full w-full">
+<!-- Sidebar Navigation (Collapsed) -->
+<aside class="w-16 bg-navy flex flex-col items-center py-6 gap-8 border-r border-navy-dark z-20 shrink-0 sticky top-0 h-screen">
+<!-- Brand Logo -->
+<div class="w-10 h-10 bg-turquoise/20 flex items-center justify-center rounded border border-turquoise/50">
+<span class="material-symbols-outlined text-turquoise" style="font-size: 24px;">grid_view</span>
+</div>
+<!-- Nav Items -->
+<nav class="flex flex-col gap-6 w-full items-center">
+<button class="w-10 h-10 flex items-center justify-center rounded text-white bg-white/10 border border-white/20 shadow-[0_0_10px_rgba(16,207,201,0.2)] relative group">
+<span class="material-symbols-outlined" style="font-size: 24px;">dashboard</span>
+<div class="absolute left-12 bg-navy-dark text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Global Dashboard</div>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded text-gray-400 hover:text-turquoise hover:bg-white/5 transition-colors relative group">
+<span class="material-symbols-outlined" style="font-size: 24px;">list_alt</span>
+<div class="absolute left-12 bg-navy-dark text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Master List</div>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded text-gray-400 hover:text-turquoise hover:bg-white/5 transition-colors relative group">
+<span class="material-symbols-outlined" style="font-size: 24px;">analytics</span>
+<div class="absolute left-12 bg-navy-dark text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Deep Dive</div>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded text-gray-400 hover:text-turquoise hover:bg-white/5 transition-colors relative group">
+<span class="material-symbols-outlined" style="font-size: 24px;">group</span>
+</button>
+</nav>
+<div class="mt-auto flex flex-col gap-6 items-center">
+<button class="w-10 h-10 flex items-center justify-center rounded text-gray-400 hover:text-turquoise hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">settings</span>
+</button>
+<div class="w-8 h-8 rounded bg-gray-600 bg-cover bg-center border border-gray-500" data-alt="User profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDSUt88o2skZiGZiy1qy-FW5CJYwmtbweEfAV0atXjE2DmvokQCmzug8X6_EjOuHd2jMsYzWiEMW6B_lIb7B5oaMGYVaCxOI-qngzp_vcwWPQPdrMs3MKNCNQhgnT9r_wudMLQyS1IwHEHNRjQ8xkxbGjZlb3XJvNsO4cMO2zy0ldHixSprRxibk0A5J8a-vgCPZSBnUXDj2wOemVyWmbe7UyN6_sJri_XKVHVZBavnawkQJXZNK2qCkqI-O4WakvUFiA7tbASUWrt3');"></div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-background-light relative">
+<!-- Background Grid Pattern -->
+<div class="absolute inset-0 grid-bg opacity-30 pointer-events-none z-0"></div>
+<!-- Header -->
+<header class="h-16 bg-white border-b border-border flex items-center justify-between shrink-0 z-10 px-12">
+<div class="flex items-center gap-4">
+<h1 class="text-navy text-xl font-semibold tracking-tight">Global Dashboard</h1>
+<span class="h-4 w-px bg-border"></span>
+<div class="text-sm text-text-secondary flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-risk-low animate-pulse"></span>
+                        System Operational
+                    </div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative w-64 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg group-focus-within:text-turquoise transition-colors">search</span>
+<input class="w-full h-10 pl-10 pr-4 bg-background-light border border-border rounded focus:border-turquoise focus:ring-0 text-sm font-sans placeholder-text-secondary transition-all" placeholder="Search ID, Contract, or Entity..." type="text"/>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+<span class="text-[10px] text-text-secondary bg-white border border-border px-1.5 py-0.5 rounded">⌘K</span>
+</div>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 bg-background-light border border-border rounded hover:border-turquoise/50 transition-colors group">
+<span class="material-symbols-outlined text-text-secondary group-hover:text-turquoise text-lg">notifications</span>
+<span class="bg-risk-high text-white text-[10px] font-bold px-1.5 rounded-sm">3</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Dashboard Content -->
+<div class="flex-1 overflow-y-auto z-10 px-12 py-10">
+<div class="max-w-[1440px] mx-auto flex flex-col gap-8 w-full">
+<!-- KPI Ticker -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- KPI Card 1: Pending Value -->
+<div class="bg-background-surface border border-border p-5 rounded flex flex-col justify-between h-32 hover:border-turquoise/30 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-navy"></div>
+<div class="flex justify-between items-start">
+<h2 class="text-text-secondary text-sm font-semibold uppercase tracking-wider">Pending Value</h2>
+<span class="material-symbols-outlined text-text-secondary group-hover:text-navy transition-colors">account_balance_wallet</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-3xl font-mono font-medium text-navy tracking-tight">$12,405,000</span>
+<div class="flex items-center gap-2 text-xs font-medium">
+<span class="text-risk-low flex items-center">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                        2.1%
+                                    </span>
+<span class="text-text-secondary">WoW</span>
+</div>
+</div>
+</div>
+<!-- KPI Card 2: Critical Requests -->
+<div class="bg-background-surface border border-border p-5 rounded flex flex-col justify-between h-32 hover:border-risk-high/30 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-risk-high"></div>
+<div class="flex justify-between items-start">
+<h2 class="text-text-secondary text-sm font-semibold uppercase tracking-wider">Critical Requests</h2>
+<span class="material-symbols-outlined text-text-secondary group-hover:text-risk-high transition-colors">warning</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-3xl font-mono font-medium text-text-primary tracking-tight">8</span>
+<div class="flex items-center gap-2 text-xs font-medium">
+<span class="text-risk-high bg-risk-high/10 px-1.5 py-0.5 rounded-sm">Action Required</span>
+<span class="text-text-secondary">+2 DoD</span>
+</div>
+</div>
+</div>
+<!-- KPI Card 3: Avg Approval Time -->
+<div class="bg-background-surface border border-border p-5 rounded flex flex-col justify-between h-32 hover:border-turquoise/30 transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start">
+<h2 class="text-text-secondary text-sm font-semibold uppercase tracking-wider">Avg Approval Time</h2>
+<span class="material-symbols-outlined text-text-secondary">schedule</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-3xl font-mono font-medium text-text-primary tracking-tight">4h 12m</span>
+<div class="flex items-center gap-2 text-xs font-medium">
+<span class="text-risk-low">-15m</span>
+<span class="text-text-secondary">vs. Target (4h 30m)</span>
+</div>
+</div>
+</div>
+<!-- KPI Card 4: Velocity -->
+<div class="bg-background-surface border border-border p-5 rounded flex flex-col justify-between h-32 hover:border-turquoise/30 transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start">
+<h2 class="text-text-secondary text-sm font-semibold uppercase tracking-wider">Your Velocity</h2>
+<span class="material-symbols-outlined text-text-secondary">speed</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-3xl font-mono font-medium text-text-primary tracking-tight">+12%</span>
+<div class="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-turquoise h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Split View: Heatmap & Queue -->
+<section class="grid grid-cols-1 xl:grid-cols-12 gap-8 h-auto xl:h-[650px]">
+<!-- Left Pane: Risk Heatmap (7 Cols) -->
+<div class="xl:col-span-8 bg-background-surface border border-border rounded flex flex-col h-full overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-border flex justify-between items-center bg-gray-50/50">
+<div class="flex flex-col">
+<h3 class="text-navy font-semibold text-base">Risk Distribution Heatmap</h3>
+<span class="text-xs text-text-secondary">Pending approvals by Value vs. Risk Score</span>
+</div>
+<button class="text-xs font-medium text-turquoise hover:text-turquoise-dim border border-border px-3 py-1.5 bg-white rounded flex items-center gap-2 hover:bg-gray-50 transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                                    View Details
+                                </button>
+</div>
+<div class="flex-1 p-6 flex flex-col relative">
+<!-- Y Axis Label -->
+<div class="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-bold text-text-secondary tracking-widest uppercase origin-center whitespace-nowrap">
+                                    Contract Value
+                                </div>
+<div class="flex-1 flex flex-col ml-6 mb-6 gap-2">
+<!-- Grid Container -->
+<div class="flex-1 grid grid-rows-3 gap-3">
+<!-- Row 1: High Value -->
+<div class="grid grid-cols-3 gap-3">
+<!-- Low Risk / High Value -->
+<div class="bg-gray-50 border border-border hover:border-turquoise cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-text-secondary font-medium">High Val / Low Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-turquoise">2</div>
+</div>
+<!-- Med Risk / High Value -->
+<div class="bg-orange-50/50 border border-orange-100 hover:border-orange-400 cursor-pointer transition-all p-3 flex flex-col justify-between group relative overflow-hidden">
+<!-- Stripe Pattern for Medium Warning -->
+<div class="absolute inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 10px);"></div>
+<span class="text-xs text-orange-800 font-medium">High Val / Med Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-orange-600">4</div>
+</div>
+<!-- High Risk / High Value -->
+<div class="bg-risk-high/5 border border-risk-high/20 hover:border-risk-high cursor-pointer transition-all p-3 flex flex-col justify-between group relative">
+<div class="absolute top-2 right-2 w-2 h-2 rounded-full bg-risk-high animate-pulse"></div>
+<span class="text-xs text-risk-high font-bold">High Val / High Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-risk-high">3</div>
+</div>
+</div>
+<!-- Row 2: Med Value -->
+<div class="grid grid-cols-3 gap-3">
+<!-- Low Risk / Med Value -->
+<div class="bg-gray-50 border border-border hover:border-turquoise cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-text-secondary font-medium">Med Val / Low Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-turquoise">12</div>
+</div>
+<!-- Med Risk / Med Value -->
+<div class="bg-gray-50 border border-border hover:border-orange-400 cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-text-secondary font-medium">Med Val / Med Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-orange-600">6</div>
+</div>
+<!-- High Risk / Med Value -->
+<div class="bg-risk-high/5 border border-risk-high/20 hover:border-risk-high cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-risk-high font-medium">Med Val / High Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-risk-high">1</div>
+</div>
+</div>
+<!-- Row 3: Low Value -->
+<div class="grid grid-cols-3 gap-3">
+<!-- Low Risk / Low Value -->
+<div class="bg-emerald-50/30 border border-emerald-100 hover:border-emerald-500 cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-emerald-800 font-medium">Low Val / Low Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-emerald-600">24</div>
+</div>
+<!-- Med Risk / Low Value -->
+<div class="bg-gray-50 border border-border hover:border-orange-400 cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-text-secondary font-medium">Low Val / Med Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-orange-600">8</div>
+</div>
+<!-- High Risk / Low Value -->
+<div class="bg-gray-50 border border-border hover:border-risk-high cursor-pointer transition-all p-3 flex flex-col justify-between group">
+<span class="text-xs text-text-secondary font-medium">Low Val / High Risk</span>
+<div class="self-end text-2xl font-mono font-semibold text-text-primary group-hover:text-risk-high">0</div>
+</div>
+</div>
+</div>
+<!-- X Axis Label -->
+<div class="grid grid-cols-3 gap-2 mt-1">
+<div class="text-center text-xs font-bold text-text-secondary uppercase tracking-wider">Low Risk</div>
+<div class="text-center text-xs font-bold text-text-secondary uppercase tracking-wider">Med Risk</div>
+<div class="text-center text-xs font-bold text-text-secondary uppercase tracking-wider">High Risk</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Pane: Next Up Queue (5 Cols) -->
+<div class="xl:col-span-4 bg-background-surface border border-border rounded flex flex-col h-full shadow-sm">
+<div class="px-6 py-4 border-b border-border flex justify-between items-center bg-gray-50/50">
+<div class="flex items-center gap-2">
+<h3 class="text-navy font-semibold text-base">Next Up Queue</h3>
+<span class="bg-navy text-white text-[10px] px-1.5 py-0.5 rounded-sm font-mono">TOP 5 OLDEST</span>
+</div>
+<button class="text-turquoise hover:text-navy transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-background-light sticky top-0 z-10 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+<tr>
+<th class="px-6 py-3 font-medium">ID / Subject</th>
+<th class="px-6 py-3 font-medium text-right">Value / Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border">
+<!-- Item 1: Critical -->
+<tr class="group hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-l-risk-high">
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-xs text-text-secondary">REQ-2948</span>
+<span class="text-sm font-medium text-text-primary group-hover:text-navy truncate max-w-[200px]">Struct. Steel Supply</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex flex-col items-end gap-1">
+<span class="font-mono text-sm font-semibold text-text-primary">$2,100,000</span>
+<span class="text-[10px] font-bold text-risk-high bg-risk-high/10 px-1.5 py-0.5 rounded border border-risk-high/20 uppercase tracking-wide">48h Overdue</span>
+</div>
+</td>
+</tr>
+<!-- Item 2: Urgent -->
+<tr class="group hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-l-orange-400">
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-xs text-text-secondary">REQ-3021</span>
+<span class="text-sm font-medium text-text-primary group-hover:text-navy truncate max-w-[200px]">Site Labor Contract A</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex flex-col items-end gap-1">
+<span class="font-mono text-sm font-semibold text-text-primary">$450,000</span>
+<span class="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200 uppercase tracking-wide">2h Remaining</span>
+</div>
+</td>
+</tr>
+<!-- Item 3: Normal -->
+<tr class="group hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-l-transparent hover:border-l-turquoise">
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-xs text-text-secondary">REQ-3019</span>
+<span class="text-sm font-medium text-text-primary group-hover:text-navy truncate max-w-[200px]">HVAC Maintenance Q3</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex flex-col items-end gap-1">
+<span class="font-mono text-sm font-semibold text-text-primary">$125,000</span>
+<span class="text-[10px] font-bold text-text-secondary bg-gray-100 px-1.5 py-0.5 rounded border border-border uppercase tracking-wide">4h Remaining</span>
+</div>
+</td>
+</tr>
+<!-- Item 4: Normal -->
+<tr class="group hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-l-transparent hover:border-l-turquoise">
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-xs text-text-secondary">REQ-2999</span>
+<span class="text-sm font-medium text-text-primary group-hover:text-navy truncate max-w-[200px]">Legal Counsel Retainer</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex flex-col items-end gap-1">
+<span class="font-mono text-sm font-semibold text-text-primary">$85,000</span>
+<span class="text-[10px] font-bold text-text-secondary bg-gray-100 px-1.5 py-0.5 rounded border border-border uppercase tracking-wide">6h Remaining</span>
+</div>
+</td>
+</tr>
+<!-- Item 5: Normal -->
+<tr class="group hover:bg-gray-50 transition-colors cursor-pointer border-l-4 border-l-transparent hover:border-l-turquoise">
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="font-mono text-xs text-text-secondary">REQ-3045</span>
+<span class="text-sm font-medium text-text-primary group-hover:text-navy truncate max-w-[200px]">Concrete Supply - Phase 2</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex flex-col items-end gap-1">
+<span class="font-mono text-sm font-semibold text-text-primary">$3,200,000</span>
+<span class="text-[10px] font-bold text-text-secondary bg-gray-100 px-1.5 py-0.5 rounded border border-border uppercase tracking-wide">8h Remaining</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / View All -->
+<div class="p-4 border-t border-border bg-gray-50/50 flex justify-center">
+<button class="text-xs font-semibold text-navy hover:text-turquoise transition-colors uppercase tracking-wide flex items-center gap-1">
+                                    View Full Queue 
+                                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</body></html>

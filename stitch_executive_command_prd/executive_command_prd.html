@@ -1,0 +1,249 @@
+# Executive Command
+
+## Product Overview
+
+**The Pitch:** A hyper-efficient, secure approval cockpit for Coteccons C-suite executives, condensing complex DMS workflows into scan-able, AI-driven decision cards.
+
+**For:** Time-starved executives who need to approve high-value contracts and payments securely between meetings, without wading through 50-page PDFs.
+
+**Device:** mobile
+
+**Design Direction:** **Corporate Precision.** A high-contrast, authoritative aesthetic reminiscent of Swiss financial reports. Heavy use of structured grids, purposeful whitespace, and a strict navy/turquoise hierarchy to reduce cognitive load.
+
+**Inspired by:** **Bloomberg Terminal** (data density), **Brex** (clean financial actions), **Revolut Business** (transaction clarity).
+
+---
+
+## Screens
+
+- **[Auth]:** Biometric-first entry with Microsoft Entra ID fallback.
+- **[Command Center]:** Unified feed of pending actions categorized by urgency and value.
+- **[Detail: Contract]:** MM module focus - Terms, AI summary, Partner history.
+- **[Detail: Payment]:** FI module focus - Progress bars, budget variance, risk flags.
+- **[PDF Inspector]:** Split-view document reader with AI-highlighted clauses.
+- **[Decision Modal]:** Contextual approval confirmation or rejection workflows.
+
+---
+
+## Key Flows
+
+**[Flow: Rapid Approval]:** Reviewing and approving a standard payment request.
+
+1. User is on **[Command Center]** -> sees "Urgent: Payment to Steel Corp ($1.2M)" at top of list.
+2. User taps **Card** -> opens **[Detail: Payment]**.
+3. User scans **AI Summary** (green indicators) and **Progress Bar** (80% complete).
+4. User taps **Approve** (FAB).
+5. System prompts **FaceID**.
+6. **Success Toast** appears ("Approved $1.2M"), auto-advances to next pending item.
+
+**[Flow: Risk Mitigation]:** Catching an anomaly in a contract.
+
+1. User is on **[Detail: Contract]** -> notices **AI Risk Widget** is expanded (Red border).
+2. User reads "Clause 4.2 deviates from standard payment terms (Net 30 vs Net 60)."
+3. User taps **Risk Item** -> opens **[PDF Inspector]** auto-scrolled to Clause 4.2.
+4. User taps **Back**, then **Reject**.
+5. User holds **Mic Icon** -> dictates "Renegotiate to Net 60 per standard policy."
+6. Request returned to sender.
+
+---
+
+<details>
+<summary>Design System</summary>
+
+## Color Palette
+
+- **Primary:** `#16315E` - **Biscay Navy**. Headers, primary navigation, active tab states. The anchor.
+- **Action:** `#10CFC9` - **Bright Turquoise**. strictly for primary 'Approve' actions and positive value deltas.
+- **Background:** `#F8F9FA` - **Off-White**. Reduces eye strain compared to pure white.
+- **Surface:** `#FFFFFF` - **Pure White**. Cards, bottom sheets.
+- **Text Primary:** `#0F172A` - **Slate 900**. High legibility.
+- **Text Secondary:** `#64748B` - **Slate 500**. Meta data.
+- **Risk/Error:** `#DC2626` - **Red 600**. Critical risk alerts.
+- **Warning:** `#F59E0B` - **Amber 500**. Moderate deviations.
+
+## Typography
+
+Moving away from generic Roboto to a more distinctive, tabular-friendly grotesk.
+
+- **Headings:** **Space Grotesk**, 700. Technical, crisp, authoritative.
+  - H1: 28px (Screen Titles)
+  - H2: 20px (Card Titles)
+- **Body:** **IBM Plex Sans**, 400. Excellent readability for data and numbers.
+  - Body: 16px (Summary text)
+  - Data: 14px (Tabular data, monospaced for numbers)
+- **UI:** **IBM Plex Sans**, 500.
+  - Labels: 12px (uppercase, tracking 1px)
+  - Button: 16px
+
+**Style notes:** 
+- **0px Border Radius** on headers (brutalist precision).
+- **8px Border Radius** on cards (subtle softening).
+- **Heavy use of dividing lines** (`#E2E8F0`) instead of shadows to maintain flatness.
+- **Tabular Numerals** explicitly enabled for all financial figures.
+
+## Design Tokens
+
+```css
+:root {
+  --color-primary: #16315E;
+  --color-action: #10CFC9;
+  --color-bg: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-risk: #DC2626;
+  
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  
+  --radius-card: 8px;
+  --radius-btn: 4px;
+  --shadow-subtle: 0 1px 3px rgba(0,0,0,0.05);
+}
+```
+
+</details>
+
+---
+
+<details>
+<summary>Screen Specifications</summary>
+
+### [Auth]
+
+**Purpose:** Secure, frictionless entry.
+
+**Layout:** Full-screen Biscay Navy background. Centered elements.
+
+**Key Elements:**
+- **Logo:** Coteccons logo (White), 48px height, top third.
+- **Title:** "Executive Command", Space Grotesk 24px, White, below logo.
+- **Status:** "System Secure", IBM Plex 12px, Turquoise, pill badge.
+- **Biometric Prompt:** Fingerprint/FaceID icon, 64px, pulsing Turquoise opacity.
+- **Fallback:** "Login with Microsoft", outlined button, White text, bottom 20%.
+
+**States:**
+- **Loading:** Logo pulses.
+- **Error:** "Biometrics Failed" in Red text, shakes icon.
+
+---
+
+### [Command Center]
+
+**Purpose:** The main dashboard. Triage and prioritization.
+
+**Layout:**
+- **Top Bar:** 64px, Navy. User Avatar (Right), "Approvals" (Left).
+- **Filters:** Horizontal scrollable row below header. White background.
+- **List:** Vertical scroll, card-based.
+
+**Key Elements:**
+- **Filter Chips:** Pill shape, grey bg inactive, Navy bg active. [All], [Urgent], [High Value >$500k], [MM], [FI].
+- **Date Header:** Sticky section header "Today", "Yesterday". 12px bold uppercase.
+- **Approval Card:** 
+  - **Left:** Icon indicating type (Doc/Money) + Vendor Logo (if avail).
+  - **Middle:** "Project Alpha - Steel Supply" (Title), "Pending: $1,250,000" (Subtitle).
+  - **Right:** "2h ago" (Time).
+  - **Risk Dot:** Red dot on top right corner if AI detects risk.
+
+**Interactions:**
+- **Pull to Refresh:** Custom animation (Coteccons cube spinning).
+- **Swipe Left:** Quick Reject (Red background).
+- **Swipe Right:** Quick Approve (Turquoise background - limited to <$50k).
+
+---
+
+### [Detail: Payment] (FI Module)
+
+**Purpose:** Detailed review of financial requests.
+
+**Layout:** Scrollable vertical content + Fixed bottom Action Bar.
+
+**Key Elements:**
+- **Widget 1: Exec Summary:** 
+  - White Card.
+  - Row 1: Amount ($1.2M) - Large 32px font.
+  - Row 2: Vendor "Hoa Phat Steel".
+  - Row 3: AI Text "Routine payment for Batch 4/10. Within budget variance (+2%). No anomalies."
+- **Widget 2: AI Risk (Collapsible):** 
+  - Default: Collapsed if green.
+  - Expanded (if Red): Red border. "Risk: Payment date is 5 days earlier than contract terms."
+- **Widget 3: Progress:**
+  - Visual progress bar: "Total Contract Value: $10M" -> "Paid: $4M (40%)".
+  - Current Request segment highlighted in Turquoise.
+- **Action Bar:**
+  - **Approve:** 70% width, Turquoise, White Text.
+  - **More:** 15% width, Grey icon button (Reject, Forward).
+
+**Components:**
+- **Progress Bar:** 8px height, rounded ends. Grey track, Navy fill, Turquoise current segment.
+
+---
+
+### [Detail: Contract] (MM Module)
+
+**Purpose:** Reviewing legal documents/contracts.
+
+**Key Elements:**
+- **Widget 1: Key Terms:** 
+  - 2x2 Grid.
+  - Cells: [Partner Rating: A], [Duration: 24mo], [Penalty: 5%], [Warranty: 2yr].
+- **Widget 2: Data Extraction:**
+  - List of extracted milestones.
+  - "Milestone 1: Foundation - 20% - Dec 2023".
+- **Floating Button:** "View PDF", small pill floating bottom right above Action Bar.
+
+---
+
+### [PDF Inspector]
+
+**Purpose:** Deep dive into source documents.
+
+**Layout:** Full screen PDF viewer.
+
+**Key Elements:**
+- **Viewer:** Native PDF renderer.
+- **Overlays:** AI Highlights in Yellow.
+- **Navigation:** "Previous/Next Highlight" arrows at bottom center.
+- **Context:** Tap highlight -> shows tooltip "Clause 4.2: Payment Terms".
+- **Header:** "Contract.pdf", Close button (X) on left.
+
+**Interactions:**
+- **Pinch:** Zoom in/out.
+- **Tap Highlight:** Scrolls AI summary into view.
+
+---
+
+### [Decision Modal]
+
+**Purpose:** Reject or Return with context.
+
+**Layout:** Bottom Sheet (half height).
+
+**Key Elements:**
+- **Title:** "Return Request?"
+- **Input:** Large text area, "Add reason..."
+- **Dictation:** Large Mic icon, center.
+- **Tags:** Quick tags: [Budget Overrun], [Missing Info], [Wrong Vendor].
+- **Actions:** [Cancel] (Text), [Confirm Return] (Red Button).
+
+**States:**
+- **Recording:** Mic icon transforms to waveform visualizer (Turquoise).
+
+</details>
+
+---
+
+<details>
+<summary>Build Guide</summary>
+
+**Stack:** HTML + Tailwind CSS v3
+
+**Build Order:**
+1.  **[Command Center]:** Establishes the list virtualization, card components, and basic navigation shell. This is the entry point.
+2.  **[Detail: Payment]:** Builds out the core widget system (Summary, Risk, Progress) which is reused across other detail views.
+3.  **[Detail: Contract]:** Extends the widget system to grid layouts.
+4.  **[Decision Modal]:** Implements the interaction logic for non-happy paths.
+5.  **[Auth]:** Can be mocked initially, built last for integration.
+
+</details>

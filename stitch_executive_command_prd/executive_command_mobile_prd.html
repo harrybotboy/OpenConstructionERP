@@ -1,0 +1,224 @@
+# Executive Command (Mobile)
+
+## Product Overview
+
+**The Pitch:** A high-velocity decision engine for C-suite executives, transforming complex document management into a rapid-fire approval stream. Eliminates friction between review and authorization.
+
+**For:** C-Level executives at Coteccons who operate in 2-minute windows between meetings and require instant clarity on high-stakes contracts.
+
+**Device:** mobile
+
+**Design Direction:** **Corporate Precision.** High contrast, authoritative, Swiss-style minimalism. It feels like a Bloomberg terminal met a luxury watch interface—information density without clutter.
+
+**Inspired by:** Brex (mobile dashboard), Linear (issue triage speed), Swiss Airlines (typographic hierarchy).
+
+---
+
+## Screens
+
+- **01 Auth:** Biometric-first entry with enterprise fallback.
+- **02 Command Center (Feed):** The infinite scroll of decision-making.
+- **03 Detail (Payment):** Budget visualization and variance analysis.
+- **04 Detail (Contract):** AI-summarized legal review.
+- **05 PDF Inspector:** Intelligent document layer with clause highlighting.
+- **06 Action Sheet:** Frictionless, secure confirmation modal.
+
+---
+
+## Key Flows
+
+**Flow: Rapid Morning Triage**
+
+1.  User opens app -> FaceID authenticates instantly.
+2.  User sees **Command Center** with 5 pending items -> Spots a "High Risk" red indicator on a payment.
+3.  User taps card -> **Detail (Payment)** slides up.
+4.  User reviews "Budget Variance" bar (12% over) -> Taps "Reject".
+5.  **Action Sheet** prompts for reason -> User taps "Over Budget" preset -> Swipe to confirm.
+6.  User returns to **Command Center**, item animates away.
+
+---
+
+<details>
+<summary>Design System</summary>
+
+## Color Palette
+
+- **Primary:** `#10CFC9` - (Bright Turquoise) Main actions, progress bars, active states.
+- **Background:** `#F4F5F7` - (Cool Grey) Application background.
+- **Header/Nav:** `#16315E` - (Biscay Navy) Top navigation, bottom sheets, heavy text.
+- **Surface:** `#FFFFFF` - Cards, modals.
+- **Text:** `#0F172A` - (Slate 900) Primary readability.
+- **Muted:** `#64748B` - (Slate 500) Metadata, timestamps.
+- **Risk High:** `#EF4444` - (Red 500) Critical warnings.
+- **Risk Med:** `#F59E0B` - (Amber 500) Cautionary notes.
+- **Risk Low:** `#10B981` - (Emerald 500) Safe status.
+
+## Typography
+
+**Font Family:** *Space Grotesk* (Headers) for geometric authority, *IBM Plex Sans* (Body) for technical legibility.
+
+- **Display:** Space Grotesk, 700, 32px (Tight tracking `-0.02em`)
+- **H1:** Space Grotesk, 600, 24px
+- **H2:** Space Grotesk, 500, 18px (Uppercase, tracked wide `0.05em`)
+- **Body Large:** IBM Plex Sans, 400, 16px (Line height 1.5)
+- **Body Small:** IBM Plex Sans, 400, 14px
+- **Mono:** IBM Plex Mono, 400, 12px (Financial figures, IDs)
+
+**Style notes:**
+- **Zero-radius Cards:** Sharp corners on top, 0px radius. "Cut" aesthetic.
+- **Heavy Borders:** 2px borders on active elements.
+- **Swiss Grid:** Strict alignment, whitespace is active, not passive.
+
+## Design Tokens
+
+```css
+:root {
+  --color-brand-navy: #16315E;
+  --color-brand-cyan: #10CFC9;
+  --color-bg: #F4F5F7;
+  --color-surface: #FFFFFF;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --radius-sharp: 0px;
+  --radius-soft: 4px;
+  --shadow-lift: 0 4px 6px -1px rgba(22, 49, 94, 0.1);
+}
+```
+
+</details>
+
+---
+
+<details>
+<summary>Screen Specifications</summary>
+
+### 01 Auth
+
+**Purpose:** Gatekeeper. Establish security without slowing down the executive.
+
+**Layout:** Split screen. Top 60% Biscay Navy, Bottom 40% White. Logo centered at break.
+
+**Key Elements:**
+- **Biometric Prompt:** Invisible trigger on load. If fails, centered icon `48px`.
+- **Manual Login:** Button, Ghost style, `Sign in with Microsoft`.
+- **Brand Mark:** "COTECCONS" in white Space Grotesk, vertical center.
+
+**States:**
+- **Scanning:** Pulsing Turquoise ring around FaceID icon.
+- **Error:** Shake animation, toast: "Biometric failed. Use PIN."
+
+---
+
+### 02 Command Center (Feed)
+
+**Purpose:** The Inbox. Prioritize attention based on risk and urgency.
+
+**Layout:**
+- **Top Bar:** `64px` Biscay Navy. Left: "Good Morning, [Name]". Right: Filter Icon (stroked circle).
+- **Sticky Date:** `32px` Grey strip below header. "TODAY - 3 URGENT".
+- **Feed:** Vertical scroll. Card height `140px` fixed.
+
+**Key Elements (The Card):**
+- **Risk Strip:** `4px` wide vertical bar on left edge. Red/Amber/Green.
+- **Doc Type:** Top left, H2 style (e.g., "PAYMENT ORDER").
+- **Amount/Entity:** Top Right, Mono font, bold (e.g., "$1,250,000").
+- **Title:** H1 style, truncated 2 lines.
+- **Meta Row:** Bottom. "Due 2h ago" (Red text) • "Subcontractor A".
+
+**Interactions:**
+- **Swipe Right:** Quick Approve (Green background reveal).
+- **Swipe Left:** Quick Reject (Red background reveal).
+- **Tap:** Opens Detail View (Slide over).
+
+---
+
+### 03 Detail (Payment)
+
+**Purpose:** Financial scrutiny. Does this align with budget?
+
+**Layout:** Scrollable content with **Sticky Action Bar** at bottom.
+
+**Key Elements:**
+- **Variance Header:**
+  - Large Figure: "$450,000" (Space Grotesk 32px).
+  - Status Pill: "Over Budget" (Red bg, White text).
+- **Budget Viz (Progress):**
+  - Track: `8px` height, Grey.
+  - Fill: Turquoise (Budgeted).
+  - Overflow: Red segment (Variance).
+  - Labels: "Used: 85%" (Left), "This Request: +5%" (Right).
+- **Vendor Card:** "Steel Corp Ltd". Verify bank details matches history (Green checkmark).
+
+**Action Bar:**
+- Height: `80px`. Biscay Navy background.
+- **Reject:** Left, Ghost button, White text. `30%` width.
+- **Approve:** Right, Solid Turquoise button, Navy text. `70%` width. Label: "Authorize Payment".
+
+---
+
+### 04 Detail (Contract)
+
+**Purpose:** Legal safety. What are the liabilities?
+
+**Layout:** Modular widgets based on content (GenUI).
+
+**Key Elements:**
+- **AI Summary Widget:**
+  - Header: "AI Risk Assessment".
+  - Content: Bullet list. "Clause 4.2 contains non-standard liability cap." (Highlighted Yellow).
+  - collapsed by default if Risk = Low.
+- **Entity Info:** "Partner: Beton 6 Corporation".
+- **Key Terms Grid:** 2x2 grid. Value, Duration, Penalty, Jurisdiction.
+
+**States:**
+- **Loading:** Skeleton pulse on AI Summary.
+
+---
+
+### 05 PDF Inspector
+
+**Purpose:** Deep dive. Verify the actual source document.
+
+**Layout:** Full screen viewer. Dark mode background.
+
+**Key Elements:**
+- **PDF Canvas:** Pinch-to-zoom, inertial scrolling.
+- **AI Overlays:** Transparent yellow boxes over risky clauses.
+- **Tooltip:** Tap overlay -> Tooltip appears: "Unusual indemnity term."
+- **Nav:** "Close" (X) top right.
+
+**Interactions:**
+- **Double Tap:** Smart zoom to text block width.
+
+---
+
+### 06 Action Sheet
+
+**Purpose:** Confirmation and signature.
+
+**Layout:** Bottom sheet, modal. `40%` screen height.
+
+**Key Elements:**
+- **Title:** "Confirm Rejection" or "Approve Request".
+- **Reason Picker (If Reject):** Horizontal scroll chips: "Over Budget", "Missing Info", "Wrong Vendor".
+- **Comment Box:** Optional. "Add note..."
+- **Slider:** "Slide to Confirm" (prevents accidental taps). Turquoise track.
+
+</details>
+
+---
+
+<details>
+<summary>Build Guide</summary>
+
+**Stack:** HTML + Tailwind CSS v3
+
+**Build Order:**
+1.  **02 Command Center:** Establishes the card pattern, typography hierarchy, and scrolling physics.
+2.  **03 Detail (Payment):** Defines the "data density" patterns and sticky footer logic.
+3.  **06 Action Sheet:** Critical for completing the core loop (Approve/Reject).
+4.  **01 Auth:** Essential for initial entry but visually distinct from core app.
+5.  **05 PDF Inspector:** Complex interaction model, build last.
+
+</details>

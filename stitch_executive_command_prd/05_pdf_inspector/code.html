@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Command - PDF Inspector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "brand-navy": "#16315E",
+              "brand-cyan": "#10CFC9",
+              "brand-surface": "#FFFFFF",
+              "brand-text": "#0F172A",
+              "risk-high": "#EF4444",
+              "risk-med": "#F59E0B",
+              "risk-low": "#10B981",
+              "dark-bg": "#0F172A", // Deep Slate for PDF viewer background
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"],
+              "body": ["IBM Plex Sans", "sans-serif"],
+              "mono": ["IBM Plex Mono", "monospace"],
+            },
+            boxShadow: {
+              "lift": "0 4px 6px -1px rgba(22, 49, 94, 0.1)",
+              "glow": "0 0 15px rgba(16, 207, 201, 0.15)",
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .pdf-page-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .highlight-risk {
+            background-color: rgba(245, 158, 11, 0.25);
+            border-bottom: 2px solid #F59E0B;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* Simulating the "Swiss Grid" active whitespace */
+        .swiss-grid-lines {
+            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-dark-bg text-brand-surface font-body antialiased h-screen w-full overflow-hidden flex flex-col swiss-grid-lines relative">
+<!-- Top Bar Overlay -->
+<header class="absolute top-0 left-0 w-full z-50 p-4 flex justify-between items-center bg-gradient-to-b from-dark-bg/90 to-transparent pt-8 pb-12">
+<div class="flex flex-col">
+<h1 class="font-display font-bold text-lg text-white tracking-tight leading-none">Service Agreement v4.pdf</h1>
+<span class="text-slate-400 text-xs font-mono mt-1">ID: CT-2023-892 • 2.4 MB</span>
+</div>
+<button class="flex items-center justify-center size-10 rounded bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors border border-white/5 shadow-lg">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<!-- Main PDF Viewer Canvas -->
+<main class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar py-24 px-4 flex justify-center touch-pan-y">
+<!-- Simulated PDF Page -->
+<div class="relative bg-white text-brand-text w-full max-w-[95%] sm:max-w-md min-h-[140vh] p-8 md:p-12 pdf-page-shadow origin-top transition-transform duration-200" style="transform: scale(1);">
+<!-- Document Header -->
+<div class="flex justify-between items-end border-b-2 border-brand-text/10 pb-6 mb-8">
+<div class="flex flex-col">
+<span class="font-display font-bold text-2xl tracking-tight text-brand-navy">COTECCONS</span>
+<span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Construction Joint Stock Company</span>
+</div>
+<div class="text-right">
+<div class="size-12 bg-slate-100 mb-2 ml-auto" data-alt="QR Code Placeholder">
+<svg class="w-full h-full text-brand-text" fill="currentColor" viewbox="0 0 24 24">
+<path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5H15zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 2h2v2h-2v-2zm-3 2h2v2h-2v-2zm3 3h3v2h-3v-2z"></path>
+</svg>
+</div>
+<p class="text-[10px] font-mono text-slate-400">Page 3 of 12</p>
+</div>
+</div>
+<!-- Document Body Content -->
+<div class="space-y-6 text-sm leading-relaxed text-justify font-serif text-slate-800">
+<p>
+<strong>11. TERM AND TERMINATION</strong><br/>
+                    11.1 This Agreement shall commence on the Effective Date and shall continue in full force and effect until the completion of the Services, unless earlier terminated in accordance with the provisions of this Section 11.
+                </p>
+<p>
+                    11.2 Coteccons may terminate this Agreement at any time without cause by giving thirty (30) days' prior written notice to the Service Provider. In the event of such termination, Coteccons shall pay the Service Provider for all Services satisfactorily performed up to the date of termination.
+                </p>
+<!-- High Risk Clause Section -->
+<div class="relative group">
+<p class="mb-2">
+<strong>12. INDEMNIFICATION</strong><br/>
+                        12.1 The Service Provider shall indemnify, defend, and hold harmless Coteccons and its officers, directors, employees, and agents from and against any and all claims, liabilities, damages, losses, or expenses (including reasonable attorneys' fees and costs) arising out of or in any way connected with: (a) The Service Provider's access to or use of the Services; (b) The Service Provider's violation of any of the terms of this Agreement; or (c) Any negligent act or omission of Service Provider.
+                    </p>
+<!-- Nested Risk Highlight -->
+<span class="highlight-risk inline pb-0.5 px-0.5 -mx-0.5 rounded-sm">
+                        12.2 Notwithstanding the foregoing, the Service Provider's total liability under this Section 12 shall be limited to fifty percent (50%) of the total fees paid under this Agreement, except in cases of gross negligence or willful misconduct.
+                        
+                        <!-- Pulse Indicator for the Risk -->
+<span class="absolute -right-6 top-1/2 -translate-y-1/2 flex size-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-risk-med opacity-75"></span>
+<span class="relative inline-flex rounded-full size-3 bg-risk-med"></span>
+</span>
+</span>
+<!-- Tooltip (Simulated Active State) -->
+<div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 z-20">
+<div class="bg-brand-navy text-white p-3 rounded shadow-xl border border-white/10 relative">
+<div class="flex items-center gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+<span class="material-symbols-outlined text-risk-med text-lg">warning</span>
+<span class="font-display font-bold text-xs uppercase tracking-wide text-risk-med">Unusual Indemnity Cap</span>
+</div>
+<p class="text-xs text-slate-200 leading-snug">
+                                Liability cap is set at 50%, which is significantly below the standard 100% requirement for Tier-1 vendors.
+                            </p>
+<!-- Arrow -->
+<div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-brand-navy border-r border-b border-white/10 rotate-45"></div>
+</div>
+</div>
+</div>
+<p>
+<strong>13. CONFIDENTIALITY</strong><br/>
+                    13.1 "Confidential Information" means all information, whether oral, written, or in any other form, that is disclosed by Coteccons to the Service Provider in connection with this Agreement. The Service Provider agrees to hold all Confidential Information in strict confidence and not to disclose such information to any third party without the prior written consent of Coteccons.
+                </p>
+<p>
+                     13.2 The obligations of confidentiality under this Section 13 shall survive the termination or expiration of this Agreement for a period of five (5) years.
+                </p>
+<p>
+<strong>14. GOVERNING LAW</strong><br/>
+                    14.1 This Agreement shall be governed by and construed in accordance with the laws of Vietnam. Any dispute arising out of or in connection with this Agreement shall be resolved by arbitration at the Vietnam International Arbitration Centre (VIAC).
+                </p>
+<div class="h-24"></div> <!-- Spacer for scroll illusion -->
+</div>
+<!-- Page Number Footer on Paper -->
+<div class="absolute bottom-6 left-0 w-full text-center">
+<span class="text-[10px] text-slate-300 font-mono">3 / 12</span>
+</div>
+</div>
+</main>
+<!-- Floating Navigation & Controls -->
+<div class="absolute bottom-8 w-full px-6 z-50 flex items-end justify-between pointer-events-none">
+<!-- Page Indicator / Navigation -->
+<div class="flex items-center gap-2 pointer-events-auto">
+<div class="bg-brand-navy/90 backdrop-blur-md border border-white/10 rounded-full h-10 px-4 flex items-center shadow-lg gap-3">
+<button class="text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xl">chevron_left</span>
+</button>
+<span class="font-mono text-xs text-white">Pg 3</span>
+<button class="text-white hover:text-brand-cyan transition-colors">
+<span class="material-symbols-outlined text-xl">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- AI Toggle FAB -->
+<div class="flex flex-col items-end gap-3 pointer-events-auto">
+<!-- Zoom Controls (Secondary) -->
+<div class="flex flex-col gap-2">
+<button class="size-10 rounded-full bg-brand-navy/80 backdrop-blur border border-white/5 text-slate-300 hover:text-white flex items-center justify-center shadow-lg transition-all">
+<span class="material-symbols-outlined text-xl">add</span>
+</button>
+<button class="size-10 rounded-full bg-brand-navy/80 backdrop-blur border border-white/5 text-slate-300 hover:text-white flex items-center justify-center shadow-lg transition-all">
+<span class="material-symbols-outlined text-xl">remove</span>
+</button>
+</div>
+<!-- Primary Toggle -->
+<button class="h-12 px-5 rounded-full bg-brand-cyan text-brand-navy font-bold shadow-glow flex items-center gap-2 transition-transform active:scale-95 group">
+<span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">auto_awesome</span>
+<span class="font-display text-sm tracking-wide">AI Layers On</span>
+</button>
+</div>
+</div>
+<!-- Background Vignette for Focus -->
+<div class="fixed inset-0 pointer-events-none bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-80 z-40 h-32 bottom-0 top-auto"></div>
+</body></html>

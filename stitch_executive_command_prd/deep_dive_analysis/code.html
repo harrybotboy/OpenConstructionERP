@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Deep-Dive Analysis - Executive Command</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1479b8",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111b21",
+                        "surface": "#ffffff",
+                        "warning": "#fbbf24",
+                        "danger": "#ef4444",
+                        "success": "#10b981",
+                        "slate-custom": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                    boxShadow: {
+                        "elevation": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for dense feeling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .swiss-grid-border {
+            border-right: 1px solid #e2e8f0;
+        }
+        .pdf-page-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .highlight-yellow {
+            background-color: rgba(253, 224, 71, 0.4);
+            border-bottom: 2px solid #eab308;
+        }
+        .highlight-red {
+            background-color: rgba(254, 202, 202, 0.4);
+            border-bottom: 2px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-slate-900 font-display antialiased h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="h-14 bg-surface border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-20">
+<div class="flex items-center gap-4">
+<button class="flex items-center text-slate-500 hover:text-primary transition-colors">
+<span class="material-icons text-xl">arrow_back</span>
+<span class="ml-1 text-sm font-medium">Command Center</span>
+</button>
+<div class="h-6 w-px bg-slate-200"></div>
+<div class="flex items-center gap-3">
+<h1 class="text-base font-semibold text-slate-800">Reviewing Contract: <span class="font-mono text-primary font-medium">CTR-2024-8821</span></h1>
+<span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-mono rounded border border-slate-200">VER: 2.1</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col items-end">
+<span class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Vendor</span>
+<span class="text-sm font-medium text-slate-800">SteelCo Heavy Industries</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Value</span>
+<span class="text-sm font-mono font-medium text-slate-800">$4,250,000.00</span>
+</div>
+<div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-xs font-bold border border-slate-300">
+                JS
+            </div>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 flex w-full relative">
+<!-- LEFT PANE: Document Viewer -->
+<section class="w-1/2 bg-slate-100/50 swiss-grid-border relative flex flex-col h-full">
+<!-- Document Toolbar -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur border border-slate-200 shadow-elevation rounded-full px-4 py-2 flex items-center gap-4 z-10 transition-transform hover:scale-105">
+<div class="flex items-center gap-1 group cursor-pointer" title="Highlight">
+<span class="material-icons text-slate-500 text-lg group-hover:text-primary">brush</span>
+</div>
+<div class="w-px h-4 bg-slate-200"></div>
+<div class="flex items-center gap-1 group cursor-pointer" title="Comment">
+<span class="material-icons text-slate-500 text-lg group-hover:text-primary">comment</span>
+</div>
+<div class="w-px h-4 bg-slate-200"></div>
+<div class="flex items-center gap-1 group cursor-pointer" title="Strikeout">
+<span class="material-icons text-slate-500 text-lg group-hover:text-primary">strikethrough_s</span>
+</div>
+<div class="w-px h-4 bg-slate-200"></div>
+<div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+<span>Page 3 / 14</span>
+</div>
+</div>
+<!-- PDF Canvas Container -->
+<div class="flex-1 overflow-y-auto p-8 flex justify-center bg-slate-100">
+<div class="bg-white w-full max-w-[700px] min-h-[1000px] p-12 pdf-page-shadow relative">
+<!-- Fake PDF Content for visual representation -->
+<div class="space-y-6 text-slate-800 font-serif leading-relaxed text-sm">
+<div class="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
+<h2 class="text-2xl font-bold uppercase tracking-widest">Master Service Agreement</h2>
+<span class="font-mono text-xs">Doc Ref: MSA-2024-STC</span>
+</div>
+<p class="text-justify">
+                            This Master Service Agreement ("Agreement") is made effective as of October 24, 2023, by and between Coteccons Construction Joint Stock Company ("Client") and SteelCo Heavy Industries ("Provider").
+                        </p>
+<h3 class="font-bold text-base mt-6 mb-2 uppercase">3. Payment Terms</h3>
+<p class="text-justify relative">
+                            3.1 Invoicing. Provider shall submit invoices to Client on a monthly basis. Each invoice must include a detailed breakdown of services rendered.
+                            <br/><br/>
+                            3.2 Payment Schedule. <span class="highlight-yellow relative group cursor-pointer">Client agrees to pay all undisputed invoices within Net 14 days of receipt. <span class="hidden group-hover:block absolute -top-8 left-0 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">Linked to Deviation #1</span></span> Late payments shall incur interest at a rate of 1.5% per month.
+                            <br/><br/>
+                            3.3 Currency. All payments shall be made in US Dollars (USD) unless otherwise agreed in writing by both parties.
+                        </p>
+<h3 class="font-bold text-base mt-6 mb-2 uppercase">4. Liability &amp; Indemnification</h3>
+<p class="text-justify">
+                            4.1 Limitation of Liability. To the maximum extent permitted by law, Provider's total liability under this Agreement shall not exceed <span class="highlight-red relative group cursor-pointer">$50,000 USD <span class="hidden group-hover:block absolute -top-8 left-0 bg-danger text-white text-xs px-2 py-1 rounded whitespace-nowrap z-20">Critical Deviation #2</span></span> in the aggregate for all claims.
+                        </p>
+<p class="text-justify text-slate-300 select-none blur-[1px]">
+                            4.2 Indemnification. Provider agrees to indemnify, defend, and hold harmless Client from and against any and all claims, damages, losses, and expenses arising out of or resulting from Provider's negligence or misconduct.
+                            <br/><br/>
+                            5. Term and Termination. This Agreement shall commence on the Effective Date and continue for a period of two (2) years unless terminated earlier in accordance with the provisions herein. Either party may terminate this Agreement for cause upon thirty (30) days written notice.
+                            <br/><br/>
+                            6. Governing Law. This Agreement shall be governed by and construed in accordance with the laws of Vietnam.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT PANE: Analysis Engine -->
+<section class="w-1/2 bg-surface flex flex-col h-full relative">
+<!-- Analysis Header -->
+<div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+<div class="flex justify-between items-center mb-2">
+<h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+<span class="material-icons text-primary">policy</span>
+                        Policy Deviation Check
+                    </h2>
+<span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full border border-red-200">3 CRITICAL ISSUES</span>
+</div>
+<p class="text-sm text-slate-500">AI has analyzed 42 clauses against <span class="font-medium text-slate-700">Global Procurement Policy v4.2</span>.</p>
+</div>
+<!-- Deviations List -->
+<div class="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
+<!-- Deviation Card 1 (Active) -->
+<div class="group border-l-4 border-primary bg-white rounded shadow-sm border-y border-r border-slate-200 transition-all hover:shadow-md cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+<span class="material-icons text-slate-400 hover:text-primary text-sm">open_in_new</span>
+</div>
+<div class="p-5">
+<div class="flex items-center gap-3 mb-3">
+<span class="text-xs font-mono font-bold text-slate-400">CLAUSE 3.2</span>
+<h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Payment Terms</h3>
+<span class="ml-auto flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+<span class="material-icons text-[14px]">warning</span> Moderate Risk
+                            </span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="p-3 bg-slate-50 rounded border border-slate-100">
+<span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Standard Policy</span>
+<span class="text-sm font-medium text-slate-600">Net 45 Days</span>
+</div>
+<div class="p-3 bg-yellow-50 rounded border border-yellow-100 relative">
+<span class="text-[10px] uppercase font-bold text-amber-500 block mb-1">Contract Term</span>
+<span class="text-sm font-bold text-slate-900 bg-yellow-200/50 px-1 -mx-1 rounded">Net 14 Days</span>
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+</span>
+</div>
+</div>
+<!-- AI Insight -->
+<div class="flex gap-3 items-start bg-slate-50 p-3 rounded border border-slate-100">
+<span class="material-icons text-primary text-lg mt-0.5">smart_toy</span>
+<div class="space-y-1">
+<p class="text-xs font-medium text-slate-700">AI Insight</p>
+<p class="text-xs text-slate-500 leading-relaxed">
+                                    This deviation reduces working capital efficiency by <span class="font-mono font-bold text-slate-700">31 days</span>. Historical data suggests SteelCo usually accepts Net 30.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Deviation Card 2 (Critical) -->
+<div class="group border-l-4 border-danger bg-white rounded shadow-sm border-y border-r border-slate-200 transition-all hover:shadow-md cursor-pointer opacity-90 hover:opacity-100">
+<div class="p-5">
+<div class="flex items-center gap-3 mb-3">
+<span class="text-xs font-mono font-bold text-slate-400">CLAUSE 4.1</span>
+<h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Liability Cap</h3>
+<span class="ml-auto flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+<span class="material-icons text-[14px]">error</span> Critical Risk
+                            </span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="p-3 bg-slate-50 rounded border border-slate-100">
+<span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Standard Policy</span>
+<span class="text-sm font-medium text-slate-600">100% Contract Value</span>
+</div>
+<div class="p-3 bg-red-50 rounded border border-red-100">
+<span class="text-[10px] uppercase font-bold text-red-500 block mb-1">Contract Term</span>
+<span class="text-sm font-bold text-slate-900 line-through decoration-red-500 decoration-2 mr-2 opacity-50">$4.25M</span>
+<span class="text-sm font-bold text-red-700">$50,000 Flat</span>
+</div>
+</div>
+<!-- AI Insight -->
+<div class="flex gap-3 items-start bg-slate-50 p-3 rounded border border-slate-100">
+<span class="material-icons text-primary text-lg mt-0.5">smart_toy</span>
+<div class="space-y-1">
+<p class="text-xs font-medium text-slate-700">AI Insight</p>
+<p class="text-xs text-slate-500 leading-relaxed">
+                                    Cap is <span class="font-mono font-bold text-red-600">1.1%</span> of total contract value. Extremely high exposure. Recommend rejection or renegotiation to at least 50% value.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Deviation Card 3 -->
+<div class="group border-l-4 border-slate-300 bg-white rounded shadow-sm border-y border-r border-slate-200 transition-all hover:shadow-md cursor-pointer opacity-75 hover:opacity-100">
+<div class="p-5">
+<div class="flex items-center gap-3 mb-3">
+<span class="text-xs font-mono font-bold text-slate-400">CLAUSE 12.4</span>
+<h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Force Majeure</h3>
+<span class="ml-auto flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                Low Risk
+                            </span>
+</div>
+<p class="text-xs text-slate-500">Minor language deviation regarding "Pandemic" definition. Acceptable within 2024 guidelines.</p>
+</div>
+</div>
+</div>
+<!-- Floating Decision Widget -->
+<div class="absolute bottom-8 right-8 z-30 flex flex-col items-end gap-2">
+<div class="bg-surface shadow-elevation border border-slate-200 rounded p-4 w-80 mb-2">
+<label class="block text-xs font-bold text-slate-500 uppercase mb-2">Add Decision Note</label>
+<textarea class="w-full text-sm bg-slate-50 border-slate-200 rounded p-2 focus:ring-primary focus:border-primary resize-none h-20" placeholder="Optional comments for the vendor..."></textarea>
+</div>
+<div class="flex items-center gap-3 bg-surface p-2 rounded-lg shadow-elevation border border-slate-200">
+<button class="flex items-center justify-center gap-2 px-6 py-3 rounded text-sm font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all">
+<span class="material-icons text-lg">block</span>
+                        Reject
+                    </button>
+<div class="w-px h-8 bg-slate-200"></div>
+<button class="flex items-center justify-center gap-2 px-8 py-3 rounded text-sm font-bold text-white bg-primary hover:bg-sky-700 shadow-sm transition-all transform active:scale-95">
+<span class="material-icons text-lg">check_circle</span>
+                        Approve Contract
+                    </button>
+</div>
+</div>
+</section>
+</main>
+</body></html>
