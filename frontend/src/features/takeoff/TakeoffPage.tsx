@@ -725,26 +725,23 @@ function TakeoffDocFilmstrip({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="shrink-0 bg-surface-primary border border-border-light rounded-xl mt-3 overflow-hidden">
+    <div className="shrink-0 overflow-hidden border-t border-border-light bg-surface-secondary">
       {/* Header — always visible */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center w-full px-4 py-2 cursor-pointer group hover:bg-surface-secondary/40 transition-colors"
+        className="flex items-center w-full px-4 py-2 cursor-pointer transition-colors hover:bg-surface-primary"
       >
-        <Layers size={14} className="text-content-tertiary mr-2 shrink-0" />
-        <span className="text-xs font-semibold text-content-primary">
-          {t('takeoff.documents_panel', { defaultValue: 'Documents‌⁠‍' })}
+        <Layers size={13} className="mr-2 shrink-0 text-content-tertiary" />
+        <span className="text-xs font-semibold text-content-secondary uppercase tracking-wide">
+          {t('takeoff.documents_label', 'Documents')}
         </span>
-        <span className="text-[11px] text-content-quaternary ml-1.5">
+        <span className="ml-1.5 text-[11px] text-content-tertiary">
           ({documents.length})
         </span>
         <ChevronDown
-          size={14}
-          className={clsx(
-            'ml-auto text-content-tertiary transition-transform duration-200',
-            expanded ? '' : '-rotate-90',
-          )}
+          size={13}
+          className={clsx('ml-auto text-content-tertiary transition-transform duration-200', expanded ? '' : '-rotate-90')}
         />
       </button>
 
@@ -755,7 +752,7 @@ function TakeoffDocFilmstrip({
       >
         <div className="flex items-center gap-2 px-4 pb-2.5 overflow-x-auto">
           {isLoading && documents.length === 0 ? (
-            <Loader2 size={14} className="animate-spin text-content-tertiary" />
+            <Loader2 size={14} className="animate-spin text-oe-blue" />
           ) : documents.length > 0 ? (
             documents.map((doc) => {
               const isActive = doc.id === activeDocId;
@@ -768,43 +765,33 @@ function TakeoffDocFilmstrip({
                   onClick={() => onSelectDoc(doc.id)}
                   disabled={isUploading || hasError}
                   className={clsx(
-                    'group relative shrink-0 w-44 text-start rounded-lg border transition-all duration-200 overflow-hidden',
-                    hasError
-                      ? 'border-semantic-error/40 bg-semantic-error-bg/40'
-                      : isActive
-                        ? 'border-oe-blue bg-oe-blue-subtle/40 shadow-sm'
-                        : 'border-border-light bg-surface-secondary/40 hover:bg-surface-secondary hover:border-oe-blue/30',
-                    (isUploading || hasError) && 'cursor-not-allowed',
+                    'group relative shrink-0 w-44 text-start rounded-lg transition-all duration-200 overflow-hidden border',
+                    isActive
+                      ? 'border-oe-blue bg-oe-blue-subtle'
+                      : hasError
+                        ? 'border-semantic-error/40 bg-semantic-error-bg/30'
+                        : 'border-border-light bg-surface-primary hover:border-border-medium',
+                    (isUploading || hasError) && 'cursor-not-allowed opacity-50',
                   )}
                 >
                   <div className="px-2.5 py-2">
                     <div className="flex items-center gap-1.5 mb-1">
                       {isUploading ? (
-                        <Loader2 size={12} className="shrink-0 text-oe-blue animate-spin" />
+                        <Loader2 size={12} className="shrink-0 animate-spin text-oe-blue" />
                       ) : (
                         <FileText
                           size={12}
-                          className={clsx(
-                            'shrink-0',
-                            isActive ? 'text-oe-blue' : 'text-content-tertiary',
-                          )}
+                          className={clsx('shrink-0', isActive ? 'text-oe-blue' : 'text-content-tertiary')}
                         />
                       )}
-                      <span
-                        className={clsx(
-                          'text-[11px] font-semibold truncate',
-                          isActive ? 'text-oe-blue' : 'text-content-primary',
-                        )}
-                      >
+                      <span className={clsx('text-[11px] font-semibold truncate', isActive ? 'text-oe-blue' : 'text-content-primary')}>
                         {doc.filename}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-content-quaternary">
+                    <div className="flex items-center gap-1.5 text-[10px] text-content-quaternary font-mono">
                       {doc.pages > 0 && (
                         <>
-                          <span>
-                            {doc.pages} {t('takeoff.pages_short', { defaultValue: 'p' })}
-                          </span>
+                          <span>{doc.pages} {t('takeoff.pages_short', { defaultValue: 'p' })}</span>
                           <span>&middot;</span>
                         </>
                       )}
@@ -821,17 +808,9 @@ function TakeoffDocFilmstrip({
                   <span
                     role="button"
                     tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteDoc(doc.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.stopPropagation();
-                        onDeleteDoc(doc.id);
-                      }
-                    }}
-                    className="absolute top-1 right-1 p-1 rounded text-content-quaternary hover:text-semantic-error hover:bg-semantic-error-bg opacity-0 group-hover:opacity-100 transition-all"
+                    onClick={(e) => { e.stopPropagation(); onDeleteDoc(doc.id); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onDeleteDoc(doc.id); } }}
+                    className="absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-all text-content-tertiary hover:text-semantic-error"
                     title={t('common.delete', 'Delete')}
                   >
                     <X size={11} />
@@ -841,22 +820,17 @@ function TakeoffDocFilmstrip({
             })
           ) : (
             <span className="text-[11px] text-content-quaternary">
-              {t('takeoff.no_documents_filmstrip', {
-                defaultValue: 'No documents uploaded yet‌⁠‍',
-              })}
+              {t('takeoff.no_documents_filmstrip', { defaultValue: 'No documents uploaded yet‌⁠‍' })}
             </span>
           )}
           {/* Upload new doc button */}
           <button
             type="button"
             onClick={onUploadNew}
-            className="flex items-center justify-center shrink-0 w-14 h-14 rounded-lg border-2 border-dashed border-border-medium hover:border-oe-blue/50 hover:bg-oe-blue/5 transition-all group"
+            className="flex items-center justify-center shrink-0 w-14 h-14 rounded-lg border-2 border-dashed border-border-medium hover:border-oe-blue hover:bg-oe-blue-subtle transition-all"
             title={t('takeoff.upload_pdf', 'Upload PDF')}
           >
-            <Plus
-              size={18}
-              className="text-content-quaternary group-hover:text-oe-blue transition-colors"
-            />
+            <Plus size={18} className="text-content-tertiary group-hover:text-oe-blue" />
           </button>
         </div>
       </div>
@@ -1551,43 +1525,37 @@ export function TakeoffPage() {
           nav, and the subtitle was purely decorative. Saves ~80px of
           vertical space so the main workspace fits in one viewport. */}
 
-      {/* Tabs — Measurements primary (first), AI second. Lower radius
-          for a sharper, more "tool-like" feel; no ring-halo. */}
-      <div className="mb-3 flex gap-1 rounded-md border border-border-light/80 bg-surface-secondary/40 p-1">
-        <button
-          onClick={() => setActiveTab('measurements')}
-          className={clsx(
-            'flex flex-1 items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors',
-            activeTab === 'measurements'
-              ? 'bg-surface-primary text-oe-blue shadow-sm'
-              : 'text-content-tertiary hover:text-content-primary hover:bg-surface-primary/60',
-          )}
-        >
-          <Ruler size={15} strokeWidth={2.1} />
-          {t('takeoff.tab_measurements', 'Measurements')}
-        </button>
-        <button
-          onClick={() => setActiveTab('documents')}
-          className={clsx(
-            'flex flex-1 items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors',
-            activeTab === 'documents'
-              ? 'bg-surface-primary text-oe-blue shadow-sm'
-              : 'text-content-tertiary hover:text-content-primary hover:bg-surface-primary/60',
-          )}
-        >
-          <Sparkles size={15} strokeWidth={2.1} />
-          {t('takeoff.tab_documents', 'Documents & AI')}
-          {documents.length > 0 && (
-            <Badge variant={activeTab === 'documents' ? 'blue' : 'neutral'} size="sm">
-              {documents.length}
-            </Badge>
-          )}
-        </button>
+      {/* Tabs — pill toggle */}
+      <div className="mb-4 flex items-center gap-1.5 p-1 bg-surface-secondary rounded-full w-fit border border-border-light">
+        {(['measurements', 'documents'] as TakeoffTab[]).map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={clsx(
+                'flex items-center gap-2 pl-3 pr-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap',
+                isActive ? 'text-white shadow-sm' : 'text-content-tertiary hover:text-content-secondary',
+              )}
+              style={isActive ? { background: '#10CFC9' } : undefined}
+            >
+              {tab === 'measurements' ? <Ruler size={13} strokeWidth={2.5} /> : <Sparkles size={13} strokeWidth={2.5} />}
+              {tab === 'measurements'
+                ? t('takeoff.tab_measurements', 'Measurements')
+                : t('takeoff.tab_documents', 'Documents & AI')}
+              {tab === 'documents' && documents.length > 0 && (
+                <span className={clsx('text-[11px] font-bold', isActive ? 'text-white/80' : 'text-content-quaternary')}>
+                  {documents.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}
       {activeTab === 'documents' ? (
-        <>
+        <div className="pt-4">
           {/* Workflow steps */}
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
             {[
@@ -1749,27 +1717,31 @@ export function TakeoffPage() {
             )}
           </Card>
 
-        </>
+        </div>
       ) : (
-        // Viewport-bounded column so the bottom file panel is always
-        // visible without scrolling the page: the viewer takes the
-        // remaining height and scrolls internally; the filmstrip is a
-        // shrink-0 footer pinned in view.
-        //
-        // Height budget: the column already sits below the sticky header
-        // (--oe-header-height, 52px), the <main> pt-6 (1.5rem) and the
-        // takeoff tabs bar (~3.25rem incl. its mb-3) — all of which the
-        // 100vh calc must NOT count again. Empirically, 7rem total is the
-        // smallest reservation that keeps the column fully inside the
-        // viewport (no page-level scrollbar) while giving the viewer the
-        // most internal height — 8rem wasted ~1rem that was shrinking the
-        // viewer enough to force an internal scrollbar on laptop screens.
-        <div className="flex flex-col h-[calc(100vh-var(--oe-header-height,52px)-7rem)] min-h-0 overflow-x-hidden">
+        // Viewport-bounded column: viewer takes remaining height, filmstrip is pinned footer.
+        <div
+          className="flex flex-col min-h-0 overflow-x-hidden rounded-b-lg overflow-hidden border border-border-light bg-surface-primary"
+          style={{ height: 'calc(100vh - var(--oe-header-height,52px) - 7rem)' }}
+        >
+          {/* Document header bar — only visible when a PDF is open */}
+          {viewerDoc && (
+            <div className="shrink-0 flex items-center justify-between px-4 py-2 gap-3 border-b border-border-light bg-surface-secondary">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText size={14} className="shrink-0 text-oe-blue" />
+                <span className="text-sm font-medium text-content-primary truncate">
+                  {viewerDoc.name}
+                </span>
+              </div>
+              <Badge variant="blue" size="sm">PDF</Badge>
+            </div>
+          )}
+
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <Suspense
               fallback={
                 <div className="flex items-center justify-center py-20">
-                  <Loader2 size={24} className="animate-spin text-oe-blue" />
+                  <Loader2 size={24} className="animate-spin" style={{ color: '#10CFC9' }} />
                 </div>
               }
             >
@@ -1780,7 +1752,7 @@ export function TakeoffPage() {
             </Suspense>
           </div>
 
-          {/* Bottom filmstrip — list previously uploaded takeoff documents. */}
+          {/* Bottom filmstrip — dark EC theme */}
           <TakeoffDocFilmstrip
             documents={filmstripDocuments}
             activeDocId={activeDocId}

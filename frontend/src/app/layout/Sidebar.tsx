@@ -51,7 +51,6 @@ import {
   Search,
   Pin,
   PinOff,
-  Github,
   HardDrive,
   Link2,
   // 18-Modules Wave icons
@@ -81,7 +80,6 @@ import { useViewModeStore } from '@/stores/useViewModeStore';
 import { useRecentStore } from '@/stores/useRecentStore';
 import { useGlobalSearchStore } from '@/stores/useGlobalSearchStore';
 import { getModuleNavItems } from '@/modules/_registry';
-import { APP_VERSION } from '@/shared/lib/version';
 import { useSidebarBadges } from '@/shared/hooks/useSidebarBadges';
 import { useIsRTL } from '@/shared/hooks/useIsRTL';
 import {
@@ -130,7 +128,6 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard },
-      { labelKey: 'nav.approvals', to: '/approvals', icon: ClipboardCheck },
       { labelKey: 'projects.title', to: '/projects', icon: FolderOpen, tourId: 'projects' },
       // Files lives in Overview because it's the unified entry point
       // into a project's documents, photos, BIM and DWG — users land
@@ -1067,83 +1064,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             expanding the sidebar. */}
         {!iconified && <UpdateNotification />}
 
-        {/* Version + AGPL + GitHub link
-            Layout: GitHub icon (left) · version · AGPL link.
-            The GitHub link uses Lucide's Github mark — keeps the row aligned
-            with the rest of the sidebar's lucide icons and gives a clear
-            visual entry point to the source repo. */}
-        {iconified ? (
-          // Icon-only footer: GitHub + Telegram stacked. The expand
-          // toggle lives on the floating edge-pill, not down here, so
-          // users see only one toggle entry-point — no duplicate UI.
-          <div className="pt-2 pb-1 flex flex-col items-center gap-1">
-            <a
-              href="https://github.com/datadrivenconstruction/OpenConstructionERP"
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`GitHub repository (v${APP_VERSION})`}
-              aria-label="GitHub repository"
-              className="flex h-8 w-8 items-center justify-center rounded-md border border-border-light bg-surface-primary hover:bg-surface-elevated transition-all"
-            >
-              <Github size={13} strokeWidth={1.75} className="text-content-secondary" />
-            </a>
-            <a
-              href="https://t.me/datadrivenconstruction"
-              target="_blank"
-              rel="noopener noreferrer"
-              title={t('sidebar.community_title', { defaultValue: 'Community' })}
-              aria-label="Telegram community"
-              className="flex h-8 w-8 items-center justify-center rounded-md border border-border-light bg-surface-primary hover:bg-surface-elevated transition-all"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-[13px] w-[13px] text-content-secondary" aria-hidden>
-                <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71l-4.14-3.06-1.99 1.93c-.23.23-.42.42-.83.42z" />
-              </svg>
-            </a>
-          </div>
-        ) : (
-          <div className="px-2 pb-2 pt-1 flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <a
-                href="https://github.com/datadrivenconstruction/OpenConstructionERP"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="GitHub repository"
-                aria-label="GitHub repository"
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-border-light bg-surface-primary hover:bg-surface-elevated hover:border-border-medium px-2 py-1.5 transition-all"
-              >
-                <Github size={13} strokeWidth={1.75} className="text-content-secondary" />
-                <span className="text-xs font-medium text-content-secondary">GitHub</span>
-              </a>
-              <a
-                href="https://t.me/datadrivenconstruction"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Join the Telegram community"
-                aria-label="Telegram community"
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-border-light bg-surface-primary hover:bg-surface-elevated hover:border-border-medium px-2 py-1.5 transition-all"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[13px] w-[13px] text-content-secondary" aria-hidden>
-                  <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71l-4.14-3.06-1.99 1.93c-.23.23-.42.42-.83.42z" />
-                </svg>
-                <span className="text-xs font-medium text-content-secondary">
-                  {t('sidebar.community_title', { defaultValue: 'Community' })}
-                </span>
-              </a>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 min-w-0">
-              <span className="text-2xs text-content-tertiary">v{APP_VERSION}</span>
-              <span className="text-2xs text-content-quaternary/40">·</span>
-              <a
-                href="/api/source"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-2xs text-content-tertiary hover:text-content-secondary transition-colors"
-              >
-                AGPL-3.0
-              </a>
-            </div>
-          </div>
-        )}
       </div>
       {/* Mounted at the aside root so the dialog escapes any
           z-index / overflow trap imposed by the inner nav scroller.
