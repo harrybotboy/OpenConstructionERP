@@ -23,6 +23,8 @@ import {
   Link2,
   ArrowRight,
   Layers,
+  Search,
+  RefreshCw,
 } from 'lucide-react';
 
 import { Button, Card, Badge, Input, Skeleton } from '@/shared/ui';
@@ -869,6 +871,8 @@ export function TakeoffPage() {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [addToBOQSuccess, setAddToBOQSuccess] = useState<string | null>(null);
   const [uploadErrorToast, setUploadErrorToast] = useState<string | null>(null);
+  const [docFilter, setDocFilter] = useState<'all' | 'analyzed' | 'pending'>('all');
+  const [docSearch, setDocSearch] = useState('');
   const filmstripUploadRef = useRef<HTMLInputElement>(null);
 
   /** Currently opened document in the Measurements viewer. */
@@ -1413,6 +1417,44 @@ export function TakeoffPage() {
     return Array.from(byId.values());
   }, [serverDocuments, documents]);
 
+  const analyzedDocs = filmstripDocuments.filter((d) => !!d.analysis).length;
+  const pendingDocs = filmstripDocuments.filter(
+    (d) => !d.analysis && !d.analyzing && !d.uploading && !d.uploadError,
+  ).length;
+  const totalElements = filmstripDocuments.reduce(
+    (sum, d) => sum + (d.analysis?.elements.length ?? 0),
+    0,
+  );
+  const allCategories = useMemo(() => {
+    const cats: Record<string, { count: number; unit: string }> = {};
+    filmstripDocuments.forEach((doc) => {
+      if (doc.analysis) {
+        Object.entries(doc.analysis.summary.categories).forEach(([cat, info]) => {
+          if (cats[cat]) {
+            cats[cat].count += info.count;
+          } else {
+            cats[cat] = { count: info.count, unit: info.unit };
+          }
+        });
+      }
+    });
+    return cats;
+  }, [filmstripDocuments]);
+  const categoryEntries = useMemo(
+    () => Object.entries(allCategories).sort((a, b) => b[1].count - a[1].count),
+    [allCategories],
+  );
+  const filteredCmdDocs = useMemo(
+    () =>
+      filmstripDocuments.filter((d) => {
+        if (docFilter === 'analyzed' && !d.analysis) return false;
+        if (docFilter === 'pending' && (d.analysis || d.analyzing || d.uploading)) return false;
+        if (docSearch && !d.filename.toLowerCase().includes(docSearch.toLowerCase())) return false;
+        return true;
+      }),
+    [filmstripDocuments, docFilter, docSearch],
+  );
+
   /** Open a server-side document in the Measurements viewer. */
   const handleOpenDocInViewer = useCallback(
     (docId: string) => {
@@ -1718,25 +1760,28 @@ export function TakeoffPage() {
           </Card>
 
         </div>
-      ) : (
-        // Viewport-bounded column: viewer takes remaining height, filmstrip is pinned footer.
+      ) : viewerDoc ? (
+        // ── PDF Viewer (document is open) ─────────────────────────────
         <div
           className="flex flex-col min-h-0 overflow-x-hidden rounded-b-lg overflow-hidden border border-border-light bg-surface-primary"
           style={{ height: 'calc(100vh - var(--oe-header-height,52px) - 7rem)' }}
         >
-          {/* Document header bar — only visible when a PDF is open */}
-          {viewerDoc && (
-            <div className="shrink-0 flex items-center justify-between px-4 py-2 gap-3 border-b border-border-light bg-surface-secondary">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <FileText size={14} className="shrink-0 text-oe-blue" />
-                <span className="text-sm font-medium text-content-primary truncate">
-                  {viewerDoc.name}
-                </span>
-              </div>
-              <Badge variant="blue" size="sm">PDF</Badge>
+          <div className="shrink-0 flex items-center justify-between px-4 py-2 gap-3 border-b border-border-light bg-surface-secondary">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                onClick={() => setViewerDoc(null)}
+                className="flex items-center gap-1 text-[11px] font-bold text-content-tertiary hover:text-content-primary transition-colors uppercase tracking-widest shrink-0 mr-1"
+              >
+                ← BACK
+              </button>
+              <span className="text-content-quaternary select-none">|</span>
+              <FileText size={14} className="shrink-0 text-oe-blue ml-1" />
+              <span className="text-sm font-medium text-content-primary truncate">
+                {viewerDoc.name}
+              </span>
             </div>
-          )}
-
+            <Badge variant="blue" size="sm">PDF</Badge>
+          </div>
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <Suspense
               fallback={
@@ -1746,13 +1791,11 @@ export function TakeoffPage() {
               }
             >
               <TakeoffViewerModule
-                initialPdfUrl={viewerDoc?.url}
-                initialPdfName={viewerDoc?.name}
+                initialPdfUrl={viewerDoc.url}
+                initialPdfName={viewerDoc.name}
               />
             </Suspense>
           </div>
-
-          {/* Bottom filmstrip — dark EC theme */}
           <TakeoffDocFilmstrip
             documents={filmstripDocuments}
             activeDocId={activeDocId}
@@ -1761,7 +1804,405 @@ export function TakeoffPage() {
             onDeleteDoc={handleRemoveDocument}
             onUploadNew={() => filmstripUploadRef.current?.click()}
           />
-          {/* Hidden file input shared between Documents tab and Measurements filmstrip. */}
+          <input
+            ref={filmstripUploadRef}
+            type="file"
+            accept="application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.tiff"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []).filter(
+                (f) =>
+                  (f.type === 'application/pdf' || f.type.startsWith('image/')) &&
+                  f.size <= MAX_FILE_SIZE_BYTES,
+              );
+              if (files.length > 0) handleFilesSelected(files);
+              if (filmstripUploadRef.current) filmstripUploadRef.current.value = '';
+            }}
+          />
+        </div>
+      ) : (
+        // ── Command Center Overview ────────────────────────────────────
+        <div className="animate-fade-in pb-8">
+          {/* Page header */}
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-xl font-black tracking-widest uppercase text-content-primary">
+                OVERVIEW
+              </h2>
+              <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-600">
+                  SYSTEM OPERATIONAL
+                </span>
+              </div>
+              <span className="text-xs text-content-tertiary">
+                {filmstripDocuments.length} document{filmstripDocuments.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setDocFilter('pending')}
+                className={clsx(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider border transition-all',
+                  docFilter === 'pending'
+                    ? 'bg-[#0D1B2A] text-white border-[#0D1B2A]'
+                    : 'bg-surface-secondary text-content-secondary border-border-light hover:bg-surface-tertiary',
+                )}
+              >
+                PENDING
+                {pendingDocs > 0 && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white leading-none">
+                    {pendingDocs}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setDocFilter('all')}
+                className={clsx(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider border transition-all',
+                  docFilter === 'all'
+                    ? 'bg-[#0D1B2A] text-white border-[#0D1B2A]'
+                    : 'bg-surface-secondary text-content-secondary border-border-light hover:bg-surface-tertiary',
+                )}
+              >
+                ALL
+                <span className="text-[10px] opacity-70">{filmstripDocuments.length}</span>
+              </button>
+              <button
+                onClick={() => filmstripUploadRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-oe-blue text-white hover:bg-oe-blue-hover border border-oe-blue transition-colors tracking-wider uppercase"
+              >
+                <FileUp size={11} />
+                Upload PDF
+              </button>
+              <button
+                onClick={() => { void refetchServerDocuments(); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#0D1B2A] text-white hover:bg-[#1c2e4a] border border-[#0D1B2A] transition-colors tracking-wider uppercase"
+              >
+                <RefreshCw size={11} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Main panel: left dark stat card + right document list */}
+          <div className="flex rounded-xl overflow-hidden border border-border-light shadow-sm">
+            {/* Left dark panel */}
+            <div className="w-60 shrink-0 bg-[#0D1B2A] p-6 flex flex-col gap-5">
+              <div>
+                <p className="text-[10px] font-bold tracking-widest uppercase text-white/40 mb-3">
+                  PENDING REQUESTS
+                </p>
+                <p className="text-6xl font-black text-white leading-none">{pendingDocs}</p>
+                <p className="mt-2 text-sm text-white/50">items</p>
+                <p className="mt-0.5 text-xs text-white/35">Awaiting AI analysis</p>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <p className="text-3xl font-black text-white leading-none">{totalElements}</p>
+                <p className="mt-1.5 text-sm text-white/50">elements ready</p>
+                <p className="mt-0.5 text-xs text-white/35">
+                  From {analyzedDocs} analyzed doc{analyzedDocs !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              <div className="mt-auto border-t border-white/10 pt-4">
+                <p className="text-[10px] font-bold tracking-widest uppercase text-white/40 mb-2">
+                  ANALYSIS RATE
+                </p>
+                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-teal-400 transition-all duration-500"
+                    style={{
+                      width:
+                        filmstripDocuments.length > 0
+                          ? `${Math.round((analyzedDocs / filmstripDocuments.length) * 100)}%`
+                          : '0%',
+                    }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-white/40">
+                  {filmstripDocuments.length > 0
+                    ? `${Math.round((analyzedDocs / filmstripDocuments.length) * 100)}% analyzed`
+                    : '0% analyzed'}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: document list */}
+            <div className="flex-1 flex flex-col min-w-0 bg-surface-primary">
+              {/* List header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border-light bg-surface-secondary/30">
+                <div>
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-content-secondary">
+                    {docFilter === 'all'
+                      ? 'ALL DOCUMENTS'
+                      : docFilter === 'analyzed'
+                        ? 'ANALYZED DOCUMENTS'
+                        : 'PENDING ANALYSIS'}
+                  </p>
+                  <p className="text-[11px] text-content-quaternary mt-0.5">
+                    {filteredCmdDocs.length} items
+                  </p>
+                </div>
+                <div className="relative">
+                  <Search
+                    size={13}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-quaternary pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    placeholder="Search code, name..."
+                    className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border-light bg-surface-secondary text-content-primary placeholder:text-content-quaternary focus:outline-none focus:ring-1 focus:ring-oe-blue/30 w-52"
+                  />
+                </div>
+              </div>
+
+              {/* Rows */}
+              <div className="min-h-[240px]">
+                {serverDocumentsLoading && filmstripDocuments.length === 0 ? (
+                  <div className="flex items-center gap-2 px-5 py-6 text-sm text-content-tertiary">
+                    <Loader2 size={14} className="animate-spin text-oe-blue" />
+                    Loading documents…
+                  </div>
+                ) : filteredCmdDocs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-14 text-center">
+                    <FileSearch size={28} strokeWidth={1.5} className="text-content-quaternary mb-3" />
+                    <p className="text-sm font-semibold text-content-secondary mb-1">
+                      {docSearch ? 'No results found' : 'No documents yet'}
+                    </p>
+                    <p className="text-xs text-content-quaternary max-w-xs mb-4">
+                      {docSearch
+                        ? 'Try a different search term'
+                        : 'Upload a PDF drawing to start measuring quantities'}
+                    </p>
+                    {!docSearch && (
+                      <button
+                        onClick={() => filmstripUploadRef.current?.click()}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-oe-blue text-white hover:bg-oe-blue-hover border border-oe-blue transition-colors tracking-wider uppercase"
+                      >
+                        <FileUp size={13} />
+                        Upload PDF
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredCmdDocs.map((doc) => {
+                    const isAnalyzed = !!doc.analysis;
+                    const isAnalyzing = doc.analyzing;
+                    const isUploading = !!doc.uploading;
+                    const hasError = !!doc.uploadError;
+                    const elementCount = doc.analysis?.elements.length ?? 0;
+                    const isDisabled = isUploading || hasError;
+                    return (
+                      <button
+                        key={doc.id}
+                        type="button"
+                        onClick={() => !isDisabled && handleOpenDocInViewer(doc.id)}
+                        disabled={isDisabled}
+                        className={clsx(
+                          'w-full flex items-stretch border-b border-border-light/60 transition-colors group text-left',
+                          !isDisabled && 'hover:bg-surface-secondary/40 cursor-pointer',
+                          isDisabled && 'opacity-50 cursor-not-allowed',
+                        )}
+                      >
+                        {/* Left colour stripe */}
+                        <div
+                          className={clsx(
+                            'w-1 shrink-0',
+                            hasError
+                              ? 'bg-semantic-error'
+                              : isUploading || isAnalyzing
+                                ? 'bg-oe-blue'
+                                : isAnalyzed
+                                  ? 'bg-teal-400'
+                                  : 'bg-orange-400',
+                          )}
+                        />
+                        <div className="flex-1 px-4 py-3 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <span className="text-[11px] font-mono font-bold text-oe-blue leading-none">
+                                  {doc.id.replace(/-/g, '').slice(0, 12).toUpperCase()}
+                                </span>
+                                {isAnalyzed && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-teal-500/[0.08] text-teal-600 border border-teal-500/25 leading-none">
+                                    ANALYZED
+                                  </span>
+                                )}
+                                {!isAnalyzed && !isUploading && !isAnalyzing && !hasError && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-orange-500/[0.08] text-orange-600 border border-orange-500/25 leading-none">
+                                    PENDING
+                                  </span>
+                                )}
+                                {(isUploading || isAnalyzing) && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-oe-blue/[0.08] text-oe-blue border border-oe-blue/25 leading-none">
+                                    {isUploading ? 'UPLOADING' : 'ANALYZING'}
+                                  </span>
+                                )}
+                                {hasError && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-semantic-error/[0.08] text-semantic-error border border-semantic-error/25 leading-none">
+                                    ERROR
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-bold text-[#1E3A5F] dark:text-content-primary group-hover:text-oe-blue transition-colors truncate">
+                                {doc.filename}
+                              </p>
+                              <p className="text-xs text-content-tertiary mt-0.5">
+                                {doc.pages > 0 && `${doc.pages} pages · `}
+                                {formatFileSize(doc.size_bytes)}
+                                {doc.uploaded_at && ` · ${formatTimeAgo(doc.uploaded_at, t)}`}
+                              </p>
+                            </div>
+                            {isAnalyzed && elementCount > 0 && (
+                              <div className="text-right shrink-0">
+                                <p className="text-xl font-black text-[#0D1B2A] dark:text-content-primary leading-none">
+                                  {elementCount}
+                                </p>
+                                <p className="text-[9px] font-bold tracking-widest uppercase text-content-quaternary mt-0.5">
+                                  ELEMENTS
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center pr-3">
+                          <ChevronRight
+                            size={14}
+                            className="text-content-quaternary opacity-0 group-hover:opacity-100 transition-opacity"
+                          />
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Pagination footer */}
+              {filteredCmdDocs.length > 0 && (
+                <div className="border-t border-border-light px-5 py-2.5 flex items-center justify-between bg-surface-secondary/20">
+                  <span className="text-[11px] text-content-quaternary tracking-wider">
+                    PAGE 1 / 1
+                  </span>
+                  <div className="flex gap-1">
+                    <button className="px-3 py-1 rounded border border-border-light text-[11px] font-bold text-content-tertiary hover:bg-surface-secondary transition-colors uppercase">
+                      ‹ PREV
+                    </button>
+                    <button className="px-3 py-1 rounded border border-[#0D1B2A] bg-[#0D1B2A] text-white text-[11px] font-bold hover:bg-[#1c2e4a] transition-colors uppercase">
+                      NEXT ›
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom stats */}
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            {/* File types */}
+            <div className="rounded-xl border border-border-light bg-surface-primary p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-[10px] font-bold tracking-widest uppercase text-content-secondary">
+                  FILE TYPES
+                </p>
+                <span className="text-[10px] font-bold bg-surface-secondary/80 px-1.5 py-0.5 rounded border border-border-light text-content-tertiary">
+                  {filmstripDocuments.length} total
+                </span>
+              </div>
+              {(() => {
+                const pdfCount = filmstripDocuments.filter((d) =>
+                  d.filename.toLowerCase().endsWith('.pdf'),
+                ).length;
+                const imgCount = filmstripDocuments.filter(
+                  (d) => !d.filename.toLowerCase().endsWith('.pdf'),
+                ).length;
+                const types = [
+                  { name: 'PDF Documents', code: 'PDF', count: pdfCount },
+                  { name: 'Images', code: 'IMG', count: imgCount },
+                ].filter((f) => f.count > 0);
+                return types.length === 0 ? (
+                  <p className="text-xs text-content-quaternary py-2">No documents yet</p>
+                ) : (
+                  types.map((ft) => (
+                    <div
+                      key={ft.code}
+                      className="flex items-center gap-3 py-2.5 border-b border-border-light/50 last:border-0"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0D1B2A]">
+                        <FileText size={14} className="text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-content-primary">{ft.name}</p>
+                        <p className="text-xs text-content-tertiary">{ft.code}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-black text-content-primary leading-none">
+                          {ft.count}
+                        </p>
+                        <p className="text-[9px] font-bold tracking-widest uppercase text-content-quaternary mt-0.5">
+                          DOCS
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                );
+              })()}
+            </div>
+
+            {/* Categories from AI analysis */}
+            <div className="rounded-xl border border-border-light bg-surface-primary p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-content-secondary">
+                    CATEGORIES
+                  </p>
+                  <span className="text-[10px] font-bold bg-surface-secondary/80 px-1.5 py-0.5 rounded border border-border-light text-content-tertiary">
+                    {categoryEntries.length} total
+                  </span>
+                </div>
+                {categoryEntries.length > 4 && (
+                  <button className="text-xs font-bold text-oe-blue hover:underline tracking-wider">
+                    +{categoryEntries.length - 4} MORE →
+                  </button>
+                )}
+              </div>
+              {categoryEntries.length === 0 ? (
+                <p className="text-xs text-content-quaternary py-2">
+                  Analyze documents in the Documents &amp; AI tab to see categories
+                </p>
+              ) : (
+                categoryEntries.slice(0, 4).map(([cat, info]) => (
+                  <div
+                    key={cat}
+                    className="flex items-center gap-3 py-2.5 border-b border-border-light/50 last:border-0"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0D1B2A]">
+                      <Layers size={14} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-content-primary capitalize">{cat}</p>
+                      <p className="text-xs text-content-tertiary">{info.unit}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-black text-content-primary leading-none">
+                        {info.count}
+                      </p>
+                      <p className="text-[9px] font-bold tracking-widest uppercase text-content-quaternary mt-0.5">
+                        ITEMS
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Hidden file input */}
           <input
             ref={filmstripUploadRef}
             type="file"
