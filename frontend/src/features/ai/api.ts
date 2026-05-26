@@ -20,7 +20,8 @@ export type AIProvider =
   | 'zhipu'
   | 'baidu'
   | 'yandex'
-  | 'gigachat';
+  | 'gigachat'
+  | 'azure_openai';
 
 export type AIConnectionStatus = 'connected' | 'not_configured' | 'error';
 
@@ -44,6 +45,9 @@ export interface AISettings {
   baidu_api_key_set: boolean;
   yandex_api_key_set: boolean;
   gigachat_api_key_set: boolean;
+  azure_openai_api_key_set: boolean;
+  azure_openai_endpoint?: string | null;
+  azure_openai_deployment?: string | null;
   preferred_model: string;
   /** Per-provider model-id override the user has saved (provider -> model id). */
   model_overrides: Record<string, string>;
@@ -80,6 +84,9 @@ export interface AISettingsUpdate {
   baidu_api_key?: string | null;
   yandex_api_key?: string | null;
   gigachat_api_key?: string | null;
+  azure_openai_api_key?: string | null;
+  azure_openai_endpoint?: string | null;
+  azure_openai_deployment?: string | null;
 }
 
 export interface AITestResult {

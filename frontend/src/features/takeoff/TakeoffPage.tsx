@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 
 import { Button, Card, Badge, Input, Skeleton } from '@/shared/ui';
-import { apiGet, apiPost } from '@/shared/lib/api';
+import { apiGet, apiPost, getErrorMessage } from '@/shared/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useProjectContextStore } from '@/stores/useProjectContextStore';
@@ -83,6 +83,7 @@ interface UploadedDocument {
   extractingTables: boolean;
   uploadError?: string;
   uploading?: boolean;
+  analysisError?: string;
 }
 
 interface QuickMeasurement {
@@ -463,6 +464,14 @@ function DocumentCard({
           {t('takeoff.view', 'View')}
         </Button>
       </div>
+
+      {/* Analysis error */}
+      {doc.analysisError && !doc.analysis && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg bg-semantic-error-bg border border-semantic-error/20 px-3 py-2.5 animate-fade-in">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-semantic-error" />
+          <p className="text-xs text-semantic-error leading-relaxed">{doc.analysisError}</p>
+        </div>
+      )}
 
       {/* Analysis results */}
       {doc.analysis && (
@@ -1058,7 +1067,7 @@ export function TakeoffPage() {
     },
     onMutate: (docId) => {
       setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, analyzing: true } : d)),
+        prev.map((d) => (d.id === docId ? { ...d, analyzing: true, analysisError: undefined } : d)),
       );
     },
     onSuccess: (data, docId) => {
@@ -1070,14 +1079,19 @@ export function TakeoffPage() {
                 ...d,
                 analyzing: false,
                 analysis: { ...data, elements },
+                analysisError: undefined,
               }
             : d,
         ),
       );
     },
-    onError: (_err, docId) => {
+    onError: (err, docId) => {
       setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, analyzing: false } : d)),
+        prev.map((d) =>
+          d.id === docId
+            ? { ...d, analyzing: false, analysisError: getErrorMessage(err) }
+            : d,
+        ),
       );
     },
   });

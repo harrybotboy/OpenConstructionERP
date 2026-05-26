@@ -113,6 +113,7 @@ _AI_PROVIDERS: list[dict[str, Any]] = [
     {"id": "cohere", "display_name": "Cohere", "supports_streaming": True, "model_choices": []},
     {"id": "ai21", "display_name": "AI21 Labs", "supports_streaming": False, "model_choices": []},
     {"id": "xai", "display_name": "xAI Grok", "supports_streaming": True, "model_choices": []},
+    {"id": "azure_openai", "display_name": "Azure OpenAI (Microsoft)", "supports_streaming": True, "model_choices": []},
 ]
 
 
@@ -200,7 +201,7 @@ async def test_ai_connection(
     """
     _VALID_PROVIDERS = (
         "anthropic", "openai", "gemini", "openrouter", "mistral", "groq", "deepseek",
-        "together", "fireworks", "perplexity", "cohere", "ai21", "xai",
+        "together", "fireworks", "perplexity", "cohere", "ai21", "xai", "azure_openai",
     )
     provider = body.get("provider", "").strip()
     if provider not in _VALID_PROVIDERS:
@@ -236,6 +237,27 @@ async def test_ai_connection(
             ),
             "latency_ms": None,
         }
+
+    # Azure OpenAI: bundle endpoint and deployment into the key string so
+    # call_ai() / call_azure_openai() can extract them without changing the
+    # function signatures used across the rest of the codebase.
+    if provider == "azure_openai":
+        meta = getattr(settings, "metadata_", None) or {}
+        if isinstance(meta, dict):
+            az_endpoint = (meta.get("azure_endpoint") or "").rstrip("/")
+            az_deployment = meta.get("azure_deployment") or ""
+        else:
+            az_endpoint = az_deployment = ""
+        if not az_endpoint or not az_deployment:
+            return {
+                "success": False,
+                "message": (
+                    "Azure OpenAI requires Endpoint URL and Deployment Name. "
+                    "Please save them in Settings > AI before testing."
+                ),
+                "latency_ms": None,
+            }
+        api_key = f"{api_key}\x00{az_endpoint}\x00{az_deployment}"
 
     # Resolve the model id the user configured for this provider (if any),
     # falling back to the built-in default. Testing with the SAME model the

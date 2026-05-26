@@ -195,6 +195,9 @@ def _build_settings_response(settings: AISettings) -> AISettingsResponse:
         baidu_api_key_set=_usable(getattr(settings, "baidu_api_key", None)),
         yandex_api_key_set=_usable(getattr(settings, "yandex_api_key", None)),
         gigachat_api_key_set=_usable(getattr(settings, "gigachat_api_key", None)),
+        azure_openai_api_key_set=_usable(getattr(settings, "azure_openai_api_key", None)),
+        azure_openai_endpoint=meta.get("azure_endpoint") if isinstance(meta, dict) else None,
+        azure_openai_deployment=meta.get("azure_deployment") if isinstance(meta, dict) else None,
         preferred_model=settings.preferred_model,
         model_overrides=model_overrides,
         default_models=dict(DEFAULT_MODELS),
@@ -312,6 +315,7 @@ class AIService:
             "baidu_api_key",
             "yandex_api_key",
             "gigachat_api_key",
+            "azure_openai_api_key",
         ]
 
         from app.core.crypto import encrypt_secret
@@ -319,8 +323,10 @@ class AIService:
         def _merge_overrides(
             existing_meta: Any,
             incoming: dict[str, str] | None,
+            azure_endpoint: str | None = None,
+            azure_deployment: str | None = None,
         ) -> dict[str, Any]:
-            """Merge model-id overrides into the metadata JSON blob.
+            """Merge model-id overrides and Azure config into the metadata JSON blob.
 
             A blank/whitespace value for a provider clears that override
             (falls back to the built-in default). Returns the full new
@@ -339,7 +345,16 @@ class AIService:
                 else:
                     overrides.pop(key, None)  # blank clears the override
             meta["model_overrides"] = overrides
+            if azure_endpoint is not None:
+                meta["azure_endpoint"] = azure_endpoint.strip()
+            if azure_deployment is not None:
+                meta["azure_deployment"] = azure_deployment.strip()
             return meta
+
+        has_azure_config = (
+            data.azure_openai_endpoint is not None
+            or data.azure_openai_deployment is not None
+        )
 
         if settings is None:
             # Create with provided values (encrypt API keys at rest)
@@ -349,8 +364,13 @@ class AIService:
                 if val is not None:
                     create_kwargs[key_field] = encrypt_secret(val)
             create_kwargs["preferred_model"] = data.preferred_model or "claude-sonnet"
-            if data.model_overrides is not None:
-                create_kwargs["metadata_"] = _merge_overrides({}, data.model_overrides)
+            if data.model_overrides is not None or has_azure_config:
+                create_kwargs["metadata_"] = _merge_overrides(
+                    {},
+                    data.model_overrides,
+                    azure_endpoint=data.azure_openai_endpoint,
+                    azure_deployment=data.azure_openai_deployment,
+                )
             settings = AISettings(**create_kwargs)
             settings = await self.settings_repo.create(settings)
         else:
@@ -361,8 +381,13 @@ class AIService:
                     fields[key_field] = encrypt_secret(val)
             if data.preferred_model is not None:
                 fields["preferred_model"] = data.preferred_model
-            if data.model_overrides is not None:
-                fields["metadata_"] = _merge_overrides(settings.metadata_, data.model_overrides)
+            if data.model_overrides is not None or has_azure_config:
+                fields["metadata_"] = _merge_overrides(
+                    settings.metadata_,
+                    data.model_overrides,
+                    azure_endpoint=data.azure_openai_endpoint,
+                    azure_deployment=data.azure_openai_deployment,
+                )
 
             if fields:
                 await self.settings_repo.update_fields(settings.id, **fields)

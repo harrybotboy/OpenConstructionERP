@@ -3827,9 +3827,24 @@ async def analyze_document(
     # 2. Check extracted text
     extracted_text = doc.extracted_text or ""
     if not extracted_text.strip():
+        doc_status = getattr(doc, "status", None)
+        if doc_status == "needs_ocr":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "This PDF is image-based (scanned) and has no selectable text layer. "
+                    "AI analysis requires a text-based PDF. "
+                    "Options: (1) use a digitally-created PDF instead of a scan, "
+                    "or (2) run the PDF through OCR software (Adobe Acrobat, Google Drive, "
+                    "or `ocrmypdf`) to add a text layer, then re-upload."
+                ),
+            )
         raise HTTPException(
             status_code=400,
-            detail="Document has no extracted text. Please re-upload the PDF.",
+            detail=(
+                "Could not extract text from this PDF. "
+                "Please verify it is a valid, non-encrypted PDF and try re-uploading."
+            ),
         )
 
     # 3. Get user AI settings and resolve provider

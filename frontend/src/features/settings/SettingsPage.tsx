@@ -93,6 +93,15 @@ const AI_PROVIDERS: ProviderInfo[] = [
     region: 'global',
   },
   {
+    id: 'azure_openai',
+    name: 'Azure OpenAI (Microsoft)',
+    description: 'settings.ai_desc_azure_openai',
+    descriptionDefault: 'Azure-hosted OpenAI models — deploy GPT-4 in your Azure subscription',
+    keyPrefix: '',
+    docsUrl: 'https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/OpenAI',
+    region: 'global',
+  },
+  {
     id: 'gemini',
     name: 'Google Gemini',
     description: 'settings.ai_desc_gemini',
@@ -307,6 +316,9 @@ function AIConfigurationCard() {
   // Per-provider model-id override. Empty string = use the platform default.
   const [modelInput, setModelInput] = useState('');
   const [modelTouched, setModelTouched] = useState(false);
+  // Azure OpenAI extra fields
+  const [azureEndpoint, setAzureEndpoint] = useState('');
+  const [azureDeployment, setAzureDeployment] = useState('');
 
   // Fetch current settings
   const { data: settings } = useQuery({
@@ -352,6 +364,14 @@ function AIConfigurationCard() {
     setModelTouched(false);
   }, [selectedProvider, settings?.model_overrides]);
 
+  // Sync Azure-specific fields from settings when provider or settings change.
+  useEffect(() => {
+    if (selectedProvider === 'azure_openai') {
+      setAzureEndpoint(settings?.azure_openai_endpoint ?? '');
+      setAzureDeployment(settings?.azure_openai_deployment ?? '');
+    }
+  }, [selectedProvider, settings?.azure_openai_endpoint, settings?.azure_openai_deployment]);
+
   const defaultModel = settings?.default_models?.[selectedProvider] ?? '';
   const hasKeySet = isKeySetForProvider(settings, selectedProvider);
 
@@ -370,6 +390,10 @@ function AIConfigurationCard() {
         if (modelTouched) {
           // Blank string clears the override (server falls back to default).
           update.model_overrides = { [selectedProvider]: modelInput.trim() };
+        }
+        if (selectedProvider === 'azure_openai') {
+          update.azure_openai_endpoint = azureEndpoint.trim() || null;
+          update.azure_openai_deployment = azureDeployment.trim() || null;
         }
         await aiApi.updateSettings(update as Parameters<typeof aiApi.updateSettings>[0]);
       }
@@ -438,6 +462,10 @@ function AIConfigurationCard() {
       if (modelTouched) {
         // Blank string clears the override (server uses the default).
         update.model_overrides = { [selectedProvider]: modelInput.trim() };
+      }
+      if (selectedProvider === 'azure_openai') {
+        update.azure_openai_endpoint = azureEndpoint.trim() || null;
+        update.azure_openai_deployment = azureDeployment.trim() || null;
       }
       return aiApi.updateSettings(update as Parameters<typeof aiApi.updateSettings>[0]);
     },
@@ -610,6 +638,59 @@ function AIConfigurationCard() {
               })}
             </p>
           </div>
+
+          {/* Azure OpenAI: Endpoint URL + Deployment Name */}
+          {selectedProvider === 'azure_openai' && (
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="azure-endpoint"
+                  className="text-sm font-medium text-content-primary block mb-1.5"
+                >
+                  {t('settings.azure_endpoint', { defaultValue: 'Endpoint URL' })}
+                </label>
+                <input
+                  id="azure-endpoint"
+                  type="url"
+                  value={azureEndpoint}
+                  onChange={(e) => setAzureEndpoint(e.target.value)}
+                  placeholder="https://YOUR-RESOURCE.openai.azure.com"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 font-mono text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue/30 focus:border-oe-blue transition-all duration-normal ease-oe hover:border-content-tertiary"
+                />
+                <p className="mt-1.5 text-xs text-content-tertiary">
+                  {t('settings.azure_endpoint_hint', {
+                    defaultValue: 'Found in Azure Portal → your OpenAI resource → Keys and Endpoint.',
+                  })}
+                </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="azure-deployment"
+                  className="text-sm font-medium text-content-primary block mb-1.5"
+                >
+                  {t('settings.azure_deployment', { defaultValue: 'Deployment Name' })}
+                </label>
+                <input
+                  id="azure-deployment"
+                  type="text"
+                  value={azureDeployment}
+                  onChange={(e) => setAzureDeployment(e.target.value)}
+                  placeholder="gpt-4o"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="h-10 w-full rounded-lg border border-border bg-surface-primary px-3 font-mono text-sm text-content-primary placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-oe-blue/30 focus:border-oe-blue transition-all duration-normal ease-oe hover:border-content-tertiary"
+                />
+                <p className="mt-1.5 text-xs text-content-tertiary">
+                  {t('settings.azure_deployment_hint', {
+                    defaultValue:
+                      'The deployment name you created in Azure AI Foundry (formerly Azure OpenAI Studio).',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Model name override — lets users track provider model
               renames/retirements without waiting for an app update. */}

@@ -55,6 +55,8 @@ DEFAULT_MODELS: dict[str, str] = {
     "cohere": "command-r-plus",
     "ai21": "jamba-1.5-large",
     "xai": "grok-2",
+    # Azure OpenAI: deployment name is user-supplied — no global default.
+    "azure_openai": "",
     "ollama": os.environ.get("OE_OLLAMA_MODEL", "llama3.1"),
     "vllm": os.environ.get("OE_VLLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
 }
@@ -494,6 +496,79 @@ async def call_openai_compatible(
     return text, tokens
 
 
+# ── Azure OpenAI ─────────────────────────────────────────────────────────────
+
+
+async def call_azure_openai(
+    api_key: str,
+    system: str,
+    prompt: str,
+    image_base64: str | None = None,
+    image_media_type: str = "image/jpeg",
+    model: str | None = None,
+    max_tokens: int = 4096,
+) -> tuple[str, int]:
+    """Call Azure OpenAI chat completions endpoint.
+
+    Args:
+        api_key: Bundled credential string ``"{key}\\x00{endpoint}\\x00{deployment}"``.
+            Split on ``\\x00`` to recover the three components. This avoids changing
+            the existing 3-tuple return of :func:`resolve_provider_key_model`.
+        system: System prompt.
+        prompt: User message text.
+        image_base64: Optional base64-encoded image data.
+        image_media_type: MIME type of the image.
+        model: Ignored — the deployment name is embedded in the URL.
+        max_tokens: Maximum response tokens.
+
+    Returns:
+        Tuple of (response_text, tokens_used).
+    """
+    parts = api_key.split("\x00", 2)
+    real_key = parts[0]
+    endpoint = parts[1].rstrip("/") if len(parts) > 1 else ""
+    deployment = parts[2] if len(parts) > 2 else ""
+
+    if not endpoint or not deployment:
+        raise ValueError(
+            "Azure OpenAI requires both Endpoint URL and Deployment Name. "
+            "Configure them in Settings > AI."
+        )
+
+    url = (
+        f"{endpoint}/openai/deployments/{deployment}"
+        f"/chat/completions?api-version=2024-12-01-preview"
+    )
+
+    headers = {
+        "api-key": real_key,
+        "Content-Type": "application/json",
+    }
+
+    user_content: list[dict[str, Any]] = []
+    if image_base64:
+        data_url = f"data:{image_media_type};base64,{image_base64}"
+        user_content.append({"type": "image_url", "image_url": {"url": data_url}})
+    user_content.append({"type": "text", "text": prompt})
+
+    payload = {
+        "max_tokens": max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_content},
+        ],
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload, timeout=AI_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+
+    text = _extract_openai_message_text("azure_openai", data)
+    tokens = data.get("usage", {}).get("total_tokens", 0)
+    return text, tokens
+
+
 # ── Unified dispatcher ───────────────────────────────────────────────────────
 
 
@@ -559,6 +634,22 @@ async def call_ai(
         def _make_call(model_id: str | None):
             async def _call() -> tuple[str, int]:
                 return await caller(
+                    api_key,
+                    system,
+                    prompt,
+                    image_base64,
+                    image_media_type,
+                    model=model_id,
+                    max_tokens=max_tokens,
+                )
+
+            return _call
+
+    elif provider == "azure_openai":
+
+        def _make_call(model_id: str | None):
+            async def _call() -> tuple[str, int]:
+                return await call_azure_openai(
                     api_key,
                     system,
                     prompt,
@@ -735,6 +826,19 @@ def _model_override_for(settings: Any, provider: str) -> str | None:
     return raw or None
 
 
+def _bundle_azure_credentials(settings: Any, real_key: str) -> str:
+    """Bundle Azure OpenAI key with endpoint and deployment for transport.
+
+    The api_key field is encoded as ``"{real_key}\\x00{endpoint}\\x00{deployment}"``.
+    :func:`call_azure_openai` splits on ``\\x00`` to recover the three values.
+    This avoids changing the 3-tuple signature of :func:`resolve_provider_key_model`.
+    """
+    meta = getattr(settings, "metadata_", None) or {}
+    endpoint = (meta.get("azure_endpoint") or "") if isinstance(meta, dict) else ""
+    deployment = (meta.get("azure_deployment") or "") if isinstance(meta, dict) else ""
+    return f"{real_key}\x00{endpoint}\x00{deployment}"
+
+
 def resolve_provider_and_key(
     settings: Any,
     preferred_model: str | None = None,
@@ -775,6 +879,7 @@ def resolve_provider_and_key(
         (["cohere", "command"], "cohere", "cohere_api_key"),
         (["ai21", "jamba"], "ai21", "ai21_api_key"),
         (["xai", "grok"], "xai", "xai_api_key"),
+        (["azure"], "azure_openai", "azure_openai_api_key"),
     ]
 
     for keywords, provider_name, key_attr in _MODEL_PROVIDER_MAP:
@@ -783,6 +888,8 @@ def resolve_provider_and_key(
             if raw:
                 decrypted = decrypt_secret(raw)
                 if decrypted:
+                    if provider_name == "azure_openai" and settings:
+                        decrypted = _bundle_azure_credentials(settings, decrypted)
                     return provider_name, decrypted
                 # key exists but is undecryptable (JWT_SECRET rotated) —
                 # fall through so the fallback loop can try other providers
@@ -803,6 +910,7 @@ def resolve_provider_and_key(
         ("cohere", "cohere_api_key"),
         ("ai21", "ai21_api_key"),
         ("xai", "xai_api_key"),
+        ("azure_openai", "azure_openai_api_key"),
     ]
 
     undecryptable = False
@@ -812,6 +920,8 @@ def resolve_provider_and_key(
             if key_val:
                 decrypted = decrypt_secret(key_val)
                 if decrypted:
+                    if provider_name == "azure_openai":
+                        decrypted = _bundle_azure_credentials(settings, decrypted)
                     return provider_name, decrypted
                 undecryptable = True
 
@@ -824,8 +934,8 @@ def resolve_provider_and_key(
 
     msg = (
         "No AI API key configured. Please add your API key in Settings > AI. "
-        "Supported: Anthropic, OpenAI, Gemini, OpenRouter, Mistral, Groq, DeepSeek, "
-        "Together, Fireworks, Perplexity, Cohere, AI21, xAI."
+        "Supported: Anthropic, OpenAI, Azure OpenAI, Gemini, OpenRouter, Mistral, Groq, "
+        "DeepSeek, Together, Fireworks, Perplexity, Cohere, AI21, xAI."
     )
     raise ValueError(msg)
 
