@@ -10,6 +10,7 @@ Stateless service layer. Handles:
 import asyncio
 import json
 import logging
+import math
 import os
 import uuid
 from typing import Any
@@ -122,6 +123,192 @@ def _dwg_version_too_old(code: str | None) -> bool:
     except ValueError:
         return False
     return version_num < floor_num
+
+
+def _transform_point(
+    pt: dict[str, Any] | None,
+    cos_r: float, sin_r: float,
+    tx: float, ty: float,
+    sx: float, sy: float,
+) -> dict[str, Any] | None:
+    """Scale → rotate → translate a 2-D point dict {x, y}."""
+    if not pt:
+        return pt
+    x = (pt.get("x") or 0.0) * sx
+    y = (pt.get("y") or 0.0) * sy
+    return {"x": cos_r * x - sin_r * y + tx, "y": sin_r * x + cos_r * y + ty}
+
+
+def _transform_entity_raw(
+    entity: dict[str, Any],
+    tx: float, ty: float,
+    rotation_rad: float,
+    sx: float, sy: float,
+    parent_layer: str,
+    parent_layout: str,
+) -> dict[str, Any] | None:
+    """Return a copy of *entity* with geometry transformed by an INSERT's matrix.
+
+    Returns None for entity types that cannot be meaningfully transformed
+    (e.g. unknown types); the caller should drop those.
+    """
+    cos_r = math.cos(rotation_rad)
+    sin_r = math.sin(rotation_rad)
+    etype = entity.get("entity_type", "")
+    gd = entity.get("geometry_data", {})
+    layer = entity.get("layer") or parent_layer
+    color = entity.get("color") or "#cccccc"
+    new_gd: dict[str, Any] = {}
+
+    if etype == "LINE":
+        s, e = gd.get("start"), gd.get("end")
+        if not s or not e:
+            return None
+        new_gd["start"] = _transform_point(s, cos_r, sin_r, tx, ty, sx, sy)
+        new_gd["end"] = _transform_point(e, cos_r, sin_r, tx, ty, sx, sy)
+    elif etype in ("LWPOLYLINE", "POLYLINE"):
+        pts = gd.get("points", [])
+        new_gd["points"] = [_transform_point(p, cos_r, sin_r, tx, ty, sx, sy) for p in pts]
+        new_gd["closed"] = gd.get("closed", False)
+    elif etype == "CIRCLE":
+        c = gd.get("center")
+        if not c:
+            return None
+        new_gd["center"] = _transform_point(c, cos_r, sin_r, tx, ty, sx, sy)
+        new_gd["radius"] = (gd.get("radius") or 0.0) * abs(sx)
+    elif etype == "ARC":
+        c = gd.get("center")
+        if not c:
+            return None
+        new_gd["center"] = _transform_point(c, cos_r, sin_r, tx, ty, sx, sy)
+        new_gd["radius"] = (gd.get("radius") or 0.0) * abs(sx)
+        # Angles are stored in radians; add parent rotation
+        new_gd["start_angle"] = (gd.get("start_angle") or 0.0) + rotation_rad
+        new_gd["end_angle"] = (gd.get("end_angle") or 0.0) + rotation_rad
+    elif etype in ("TEXT", "MTEXT"):
+        ins = gd.get("insert") or gd.get("insertion_point")
+        if not ins:
+            return None
+        new_gd["insert"] = _transform_point(ins, cos_r, sin_r, tx, ty, sx, sy)
+        new_gd["text"] = gd.get("text", "")
+        new_gd["height"] = (gd.get("height") or 2.5) * abs(sy)
+        # Text rotation is stored in degrees
+        new_gd["rotation"] = (gd.get("rotation") or 0.0) + math.degrees(rotation_rad)
+    elif etype == "HATCH":
+        pts = gd.get("points", [])
+        new_gd["points"] = [_transform_point(p, cos_r, sin_r, tx, ty, sx, sy) for p in pts]
+        new_gd["closed"] = gd.get("closed", True)
+        new_gd["pattern_name"] = gd.get("pattern_name", "SOLID")
+        new_gd["is_solid"] = gd.get("is_solid", False)
+    elif etype == "ELLIPSE":
+        c = gd.get("center")
+        if not c:
+            return None
+        new_gd["center"] = _transform_point(c, cos_r, sin_r, tx, ty, sx, sy)
+        new_gd["major_radius"] = (gd.get("major_radius") or 1.0) * abs(sx)
+        new_gd["minor_radius"] = (gd.get("minor_radius") or 1.0) * abs(sy)
+        new_gd["rotation"] = (gd.get("rotation") or 0.0) + math.degrees(rotation_rad)
+        new_gd["start_angle"] = gd.get("start_angle") or 0.0
+        new_gd["end_angle"] = gd.get("end_angle") or 0.0
+    else:
+        return None  # unsupported in blocks (DIMENSION, SPLINE, …) — skip
+
+    return {
+        "entity_type": etype,
+        "layer": layer,
+        "color": color,
+        "geometry_data": new_gd,
+        "layout": parent_layout,
+    }
+
+
+def _expand_insert_raw(
+    insert_ent: dict[str, Any],
+    block_map: dict[str, list[dict[str, Any]]],
+    depth: int = 0,
+    max_depth: int = 6,
+) -> list[dict[str, Any]]:
+    """Recursively expand one raw INSERT entity into its constituent geometry."""
+    if depth >= max_depth:
+        return [insert_ent]
+
+    gd = insert_ent.get("geometry_data", {})
+    block_name = gd.get("block_name") or gd.get("name", "")
+    if not block_name or block_name not in block_map:
+        return [insert_ent]
+
+    ins_pt = gd.get("insert") or {}
+    tx = ins_pt.get("x") or 0.0
+    ty = ins_pt.get("y") or 0.0
+    rotation_rad = math.radians(gd.get("rotation") or 0.0)
+    sx = gd.get("x_scale") or 1.0
+    sy = gd.get("y_scale") or 1.0
+    cos_r = math.cos(rotation_rad)
+    sin_r = math.sin(rotation_rad)
+    parent_layer = insert_ent.get("layer", "0")
+    parent_layout = insert_ent.get("layout", "*Model_Space")
+
+    result: list[dict[str, Any]] = []
+    for block_ent in block_map[block_name]:
+        if block_ent.get("entity_type") == "INSERT":
+            # Nested INSERT: compose transforms then recurse
+            inner_gd = block_ent.get("geometry_data", {})
+            inner_ins = inner_gd.get("insert") or {}
+            ix = (inner_ins.get("x") or 0.0) * sx
+            iy = (inner_ins.get("y") or 0.0) * sy
+            new_ix = cos_r * ix - sin_r * iy + tx
+            new_iy = sin_r * ix + cos_r * iy + ty
+            composed_gd = dict(inner_gd)
+            composed_gd["insert"] = {"x": new_ix, "y": new_iy}
+            composed_gd["x_scale"] = (inner_gd.get("x_scale") or 1.0) * sx
+            composed_gd["y_scale"] = (inner_gd.get("y_scale") or 1.0) * sy
+            composed_gd["rotation"] = (inner_gd.get("rotation") or 0.0) + math.degrees(rotation_rad)
+            composed = {
+                **block_ent,
+                "geometry_data": composed_gd,
+                "layout": parent_layout,
+                "layer": block_ent.get("layer") or parent_layer,
+            }
+            result.extend(_expand_insert_raw(composed, block_map, depth + 1, max_depth))
+        else:
+            transformed = _transform_entity_raw(
+                block_ent, tx, ty, rotation_rad, sx, sy, parent_layer, parent_layout
+            )
+            if transformed is not None:
+                result.append(transformed)
+
+    return result
+
+
+def _expand_blocks(
+    raw_entities: list[dict[str, Any]],
+    model_space_name: str = "*Model_Space",
+) -> list[dict[str, Any]]:
+    """Replace INSERT entities in the model space with their expanded block geometry.
+
+    Block-definition layouts (e.g. ``*U69``, ``Bed full``) are kept unchanged
+    so the layout switcher in the frontend can still navigate to them.
+    """
+    block_map: dict[str, list[dict[str, Any]]] = {}
+    model_ents: list[dict[str, Any]] = []
+
+    for ent in raw_entities:
+        layout = ent.get("layout", model_space_name)
+        if layout == model_space_name:
+            model_ents.append(ent)
+        else:
+            block_map.setdefault(layout, []).append(ent)
+
+    expanded: list[dict[str, Any]] = []
+    for ent in model_ents:
+        if ent.get("entity_type") == "INSERT":
+            expanded.extend(_expand_insert_raw(ent, block_map))
+        else:
+            expanded.append(ent)
+
+    # Keep block-definition entities so the layout switcher still works
+    block_def_ents = [e for e in raw_entities if e.get("layout", model_space_name) != model_space_name]
+    return expanded + block_def_ents
 
 
 def _normalize_entity(raw: dict[str, Any], index: int) -> dict[str, Any]:
@@ -748,7 +935,13 @@ class DwgTakeoffService:
             logger.exception("Failed to load entities for drawing %s", drawing_id)
             return []
 
-        # Filter by visible layers if specified
+        # Expand INSERT (block reference) entities so the model space contains
+        # actual geometry instead of bare insertion-point markers. This makes
+        # the canvas match what AutoCAD shows when the file is opened.
+        entities = _expand_blocks(entities)
+
+        # Filter by visible layers if specified (applied after expansion so
+        # block geometry on different layers is also filtered correctly)
         if visible_layers is not None:
             visible_set = set(visible_layers)
             entities = [e for e in entities if e.get("layer", "0") in visible_set]
