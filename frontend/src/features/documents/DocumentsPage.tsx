@@ -7,6 +7,7 @@ import {
   MoreHorizontal, Pencil, Tag, Ruler, Send,
 } from 'lucide-react';
 import { Button, Badge, EmptyState, Breadcrumb, ViewInBIMButton } from '@/shared/ui';
+import { randomUUID } from '@/shared/lib/uuid';
 import SimilarItemsPanel from '@/shared/ui/SimilarItemsPanel';
 import { DateDisplay } from '@/shared/ui/DateDisplay';
 import { apiGet, apiDelete, apiPatch } from '@/shared/lib/api';
@@ -634,7 +635,7 @@ export function DocumentsPage() {
 
     // Add each file to the global queue and upload in background
     for (const file of validFiles) {
-      const taskId = crypto.randomUUID();
+      const taskId = randomUUID();
 
       addQueueTask({
         id: taskId,

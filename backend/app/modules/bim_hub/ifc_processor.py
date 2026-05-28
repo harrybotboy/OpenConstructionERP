@@ -538,8 +538,7 @@ def _excel_elements_to_bim_result(
     # Expanded set covers views, sheets, materials, annotations, tags,
     # dimensions, analytical model, model groups, revisions, schedules,
     # legends, and other non-physical Revit categories.
-    SKIP_CATEGORIES: set[str | None] = {
-        None, "",
+    SKIP_CATEGORIES: set[str] = {
         # Views, sheets, materials, settings
         "ost_materials", "ost_sunstudy", "ost_views", "ost_viewports",
         "ost_grids", "ost_levels", "ost_sheets", "ost_titleblocks",
@@ -604,6 +603,19 @@ def _excel_elements_to_bim_result(
     storeys_set: set[str] = set()
     disciplines_set: set[str] = set()
 
+    # Strip namespace prefixes (e.g. ns0:) from the DDC-generated DAE so
+    # Three.js ColladaLoader (which looks for bare <COLLADA>, <geometry>,
+    # <node>, etc.) can parse it.  Must run before _patch_collada_node_names
+    # which re-serialises the file via ElementTree.
+    if real_dae_path and real_dae_path.exists():
+        _strip_collada_ns_prefix(real_dae_path)
+
+    # Remove visual_scene nodes whose instance_geometry URL has no matching
+    # entry in library_geometries — ColladaLoader crashes on these with
+    # "Cannot read properties of undefined (reading 'build')".
+    if real_dae_path and real_dae_path.exists():
+        _repair_collada_broken_refs(real_dae_path)
+
     # Patch DDC COLLADA node names: DDC writes name="node" for every element
     # but the frontend ColladaLoader uses `name` (not `id`) for Object3D.name.
     # Without this patch, mesh_ref matching in the 3D viewer is 0%.
@@ -630,12 +642,22 @@ def _excel_elements_to_bim_result(
         category = lc_row.get("category")
         cat_lower = str(category or "").lower()
 
-        # Skip non-element rows: those with no category at all (likely orphan
-        # parameter rows from the DDC converter), and known non-element categories.
+        # Skip non-element rows: known non-element categories.
         # DDC writes the literal string "None" for elements without a Revit
-        # category — treat it the same as Python None.
-        if not category or cat_lower in SKIP_CATEGORIES or cat_lower in ("none", "null", "", "n/a"):
+        # category — fall back to family name / type name instead of skipping.
+        if cat_lower in SKIP_CATEGORIES:
             continue
+
+        # When category is missing/null/none, fall back to family name or type
+        # name so RVT files where the Category column is unpopulated still
+        # produce elements instead of zero results.
+        if not category or cat_lower in ("none", "null", "", "n/a"):
+            family_name = lc_row.get("family name") or lc_row.get("family")
+            type_name = lc_row.get("type name")
+            if not family_name and not type_name:
+                continue  # truly empty row — skip
+            category = family_name or type_name
+            cat_lower = str(category or "").lower()
 
         # Friendly element type derived from OST_ category name.
         # DDC writes raw Revit built-in category names like
@@ -2880,6 +2902,120 @@ def _extract_dae_bboxes_by_node_id(dae_path: Path) -> dict[int, dict[str, float]
         }
 
     return result
+
+
+def _repair_collada_broken_refs(dae_path: Path) -> int:
+    """Remove visual_scene nodes whose instance_geometry URL has no matching geometry.
+
+    DDC RvtExporter occasionally writes nodes that reference geometry IDs not
+    present in <library_geometries> (e.g. shape3-lib exists in the node but was
+    not emitted in the library).  Three.js ColladaLoader crashes with
+    ``Cannot read properties of undefined (reading 'build')`` the moment it
+    tries to instantiate one of these orphaned references.
+
+    Returns the number of nodes removed.
+    """
+    try:
+        tree = safe_ET.parse(str(dae_path))
+    except ET.ParseError as exc:
+        logger.warning("_repair_collada_broken_refs: XML parse error in %s: %s", dae_path.name, exc)
+        return 0
+
+    root = tree.getroot()
+
+    def _first(el: ET.Element, local: str) -> ET.Element | None:
+        for c in el:
+            if c.tag.rsplit("}", 1)[-1] == local:
+                return c
+        return None
+
+    # Collect all geometry IDs from <library_geometries>
+    lib_geom = _first(root, "library_geometries")
+    geom_ids: set[str] = set()
+    if lib_geom is not None:
+        for g in lib_geom:
+            gid = g.get("id", "")
+            if gid:
+                geom_ids.add(gid)
+
+    if not geom_ids:
+        return 0  # no geometries at all — nothing to repair
+
+    # Walk visual_scene nodes and drop those with unresolved instance_geometry
+    lib_vs = _first(root, "library_visual_scenes")
+    if lib_vs is None:
+        return 0
+    vs = _first(lib_vs, "visual_scene")
+    if vs is None:
+        return 0
+
+    to_remove: list[ET.Element] = []
+    for node in list(vs):
+        ig = _first(node, "instance_geometry")
+        if ig is None:
+            continue
+        url = ig.get("url", "").lstrip("#")
+        if url not in geom_ids:
+            to_remove.append(node)
+
+    if not to_remove:
+        return 0
+
+    for node in to_remove:
+        vs.remove(node)
+
+    tree.write(str(dae_path), xml_declaration=True, encoding="utf-8")
+    logger.info(
+        "Removed %d broken instance_geometry references from %s",
+        len(to_remove),
+        dae_path.name,
+    )
+    return len(to_remove)
+
+
+def _strip_collada_ns_prefix(dae_path: Path) -> bool:
+    """Remove namespace prefixes from a DDC-generated COLLADA file in-place.
+
+    DDC RvtExporter sometimes serialises COLLADA with a namespace prefix
+    (``<ns0:COLLADA xmlns:ns0="...">``, ``<ns0:geometry>``, etc.).
+    Three.js ColladaLoader expects bare tag names (``<COLLADA>``,
+    ``<geometry>``), so it silently produces an empty scene for prefixed files.
+
+    We do a two-pass regex substitution on raw bytes:
+      1. Replace ``<ns0:TAG`` and ``</ns0:TAG`` (opening/closing tags) with
+         the bare tag name — handles any single prefix, not just ``ns0:``.
+      2. Remove the ``xmlns:ns0="..."`` declaration on the root element.
+
+    Returns True if the file was modified, False if it already had no prefix.
+    """
+    try:
+        raw = dae_path.read_bytes()
+    except OSError as exc:
+        logger.warning("_strip_collada_ns_prefix: cannot read %s: %s", dae_path, exc)
+        return False
+
+    text = raw.decode("utf-8", errors="replace")
+
+    # Quick bail-out: no colon after < means no namespace prefix.
+    if not re.search(r"<[A-Za-z_]\w*:", text[:4096]):
+        return False
+
+    # Remove opening/closing tag prefixes: <ns0:Foo → <Foo, </ns0:Foo → </Foo
+    cleaned = re.sub(r"<(/?)([A-Za-z_]\w*):([\w.-]+)", r"<\1\3", text)
+    # Remove xmlns:prefix declarations: xmlns:ns0="..." → (dropped)
+    cleaned = re.sub(r'\s+xmlns:[A-Za-z_]\w*="[^"]*"', "", cleaned)
+
+    if cleaned == text:
+        return False
+
+    try:
+        dae_path.write_bytes(cleaned.encode("utf-8"))
+    except OSError as exc:
+        logger.warning("_strip_collada_ns_prefix: cannot write %s: %s", dae_path, exc)
+        return False
+
+    logger.info("Stripped COLLADA namespace prefix from %s", dae_path.name)
+    return True
 
 
 def _patch_collada_node_names(dae_path: Path) -> int:

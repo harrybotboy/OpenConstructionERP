@@ -31,6 +31,7 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { createMarkup, fetchMarkups } from './api';
 import type { Markup, MarkupType, CreateMarkupPayload } from './api';
+import { randomUUID } from '@/shared/lib/uuid';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -517,7 +518,7 @@ export function InlinePdfAnnotator({
     if (activeTool === 'stamp') {
       const stampDef = availableStamps.find((s) => s.name === selectedStamp);
       const newAnnotation: DrawnAnnotation = {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         tool: 'stamp',
         points: [toPdfPoint(coords)],
         coordSpace: 'pdf',
@@ -554,7 +555,7 @@ export function InlinePdfAnnotator({
     }
 
     const newAnnotation: DrawnAnnotation = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       tool: activeTool,
       points: [toPdfPoint(drawStart), toPdfPoint(drawEnd)],
       coordSpace: 'pdf',
@@ -572,7 +573,7 @@ export function InlinePdfAnnotator({
       return;
     }
     const newAnnotation: DrawnAnnotation = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       tool: 'text',
       points: [toPdfPoint(textPosition)],
       coordSpace: 'pdf',

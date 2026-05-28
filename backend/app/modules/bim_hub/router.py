@@ -159,7 +159,7 @@ def _quick_validate_geometry_bytes(blob: bytes, ext: str) -> tuple[bool, str]:
         except Exception as exc:  # pragma: no cover — utf-8 with errors='replace' can't raise
             return False, f"DAE head undecodable: {exc}"
         head_lower = head_text.lower()
-        if "<collada" not in head_lower:
+        if "<collada" not in head_lower and ":collada" not in head_lower:
             # Surface what we DID find so the user/admin can recognise it
             # (e.g. "<ifcxml", "<gbxml", "<!doctype html").
             import re as _re

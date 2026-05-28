@@ -10,6 +10,7 @@
  */
 
 import { create } from 'zustand';
+import { randomUUID } from '@/shared/lib/uuid';
 import {
   uploadCADFile,
   uploadBIMData,
@@ -392,7 +393,7 @@ export const useBIMUploadStore = create<BIMUploadState>((set, get) => {
     jobs: new Map(),
 
     startUpload: (params) => {
-      const jobId = crypto.randomUUID();
+      const jobId = randomUUID();
       const job: BIMUploadJob = {
         id: jobId,
         fileName: params.file.name,

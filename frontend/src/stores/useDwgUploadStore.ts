@@ -13,6 +13,7 @@
 import { create } from 'zustand';
 import { uploadDrawing } from '@/features/dwg-takeoff/api';
 import type { DwgDrawing } from '@/features/dwg-takeoff/api';
+import { randomUUID } from '@/shared/lib/uuid';
 
 export type DwgUploadStatus = 'uploading' | 'converting' | 'ready' | 'error';
 
@@ -141,7 +142,7 @@ export const useDwgUploadStore = create<DwgUploadState>((set, get) => {
     jobs: new Map(),
 
     startUpload: (params) => {
-      const jobId = crypto.randomUUID();
+      const jobId = randomUUID();
       const job: DwgUploadJob = {
         id: jobId,
         fileName: params.file.name,

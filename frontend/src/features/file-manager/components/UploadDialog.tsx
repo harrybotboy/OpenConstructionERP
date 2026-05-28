@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useUploadQueueStore } from '@/stores/useUploadQueueStore';
 import { fileManagerKeys } from '../hooks';
 import type { FileKind } from '../types';
+import { randomUUID } from '@/shared/lib/uuid';
 
 interface UploadDialogProps {
   open: boolean;
@@ -90,7 +91,7 @@ export function UploadDialog({
       setUploading(true);
 
       for (const file of validFiles) {
-        const taskId = crypto.randomUUID();
+        const taskId = randomUUID();
         addQueueTask({
           id: taskId,
           type: 'file_upload',

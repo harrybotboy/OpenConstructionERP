@@ -50,7 +50,7 @@ function detectGeometryKind(buffer: ArrayBuffer): 'glb' | 'dae' | null {
   );
   // Strip BOM for the check.
   const stripped = head.charCodeAt(0) === 0xfeff ? head.slice(1) : head;
-  if (/<COLLADA[\s>]/i.test(stripped)) return 'dae';
+  if (/<(?:\w+:)?COLLADA[\s>]/i.test(stripped)) return 'dae';
   return null;
 }
 
@@ -1044,7 +1044,7 @@ export class ElementManager {
         // walker explodes with the unhelpful "reading 'getAttribute'"
         // error somewhere inside the parser instead of telling us it's
         // not COLLADA. Bail out early with a clear message.
-        if (!/<COLLADA[\s>]/i.test(text.slice(0, 4096))) {
+        if (!/<(?:\w+:)?COLLADA[\s>]/i.test(text.slice(0, 4096))) {
           reject(new Error('Not a COLLADA document — <COLLADA> root tag not found in first 4096 chars'));
           return;
         }
