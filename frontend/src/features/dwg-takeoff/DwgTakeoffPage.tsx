@@ -52,6 +52,7 @@ import {
   ListChecks,
   Ruler,
   FileDown,
+  Check,
 } from 'lucide-react';
 import { Badge, ConfirmDialog, ElementInfoPopover, type DWGElementPayload } from '@/shared/ui';
 import { useConfirm } from '@/shared/hooks/useConfirm';
@@ -787,6 +788,14 @@ export function DwgTakeoffPage() {
     entityLabel?: string;
   } | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  // Subscribe to active upload jobs so the landing screen can show progress
+  const dwgUploadJobs = useDwgUploadStore((s) => s.jobs);
+  const activeUploadJob = useMemo(() => {
+    for (const job of dwgUploadJobs.values()) {
+      if (job.status === 'uploading' || job.status === 'converting') return job;
+    }
+    return null;
+  }, [dwgUploadJobs]);
   const [uploadName, setUploadName] = useState('');
   const [uploadDiscipline, setUploadDiscipline] = useState('architectural');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -2355,6 +2364,69 @@ export function DwgTakeoffPage() {
                     'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.06) 0%, transparent 70%)',
                 }}
               />
+
+              {/* Upload / analysis progress overlay — shown while a DWG job is active */}
+              {activeUploadJob && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                  <div className="pointer-events-auto w-full max-w-md mx-6 rounded-2xl border border-blue-500/30 bg-[#1e2128]/95 backdrop-blur-sm shadow-2xl px-8 py-7 flex flex-col gap-5">
+                    {/* Icon + filename */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                        <Loader2 size={20} className="text-blue-400 animate-spin" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-100 truncate">{activeUploadJob.fileName}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {t('dwg_takeoff.analysing_file', { defaultValue: 'Analysing DWG file…' })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">
+                          {t(activeUploadJob.stage, {
+                            defaultValue:
+                              activeUploadJob.status === 'uploading' ? 'Uploading…'
+                              : 'Analysing entities…',
+                          })}
+                        </span>
+                        <span className="text-[12px] font-bold text-blue-300 tabular-nums">
+                          {activeUploadJob.progress}%
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[#2a2d35] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"
+                          style={{ width: `${activeUploadJob.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stage steps */}
+                    <div className="flex items-center gap-0 text-[10px]">
+                      {(['Uploading', 'Parsing entities', 'Building layers', 'Ready'] as const).map((step, i) => {
+                        const thresholds = [0, 30, 70, 100];
+                        const done = activeUploadJob.progress >= thresholds[i + 1]!;
+                        const active = activeUploadJob.progress >= thresholds[i]! && activeUploadJob.progress < (thresholds[i + 1] ?? 101);
+                        return (
+                          <div key={step} className="flex items-center">
+                            <div className={clsx(
+                              'flex items-center gap-1 px-2 py-1 rounded-full transition-all',
+                              done ? 'text-emerald-400' : active ? 'text-blue-300 font-semibold' : 'text-slate-600',
+                            )}>
+                              {done ? <Check size={9} /> : active ? <Loader2 size={9} className="animate-spin" /> : <span className="w-2 h-2 rounded-full bg-current inline-block opacity-40" />}
+                              {step}
+                            </div>
+                            {i < 3 && <div className="w-4 h-px bg-slate-700" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Crosshair at center (AutoCAD UCS marker) */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20 z-0">
                 <div className="w-px h-8 bg-blue-400 absolute left-1/2 -translate-x-1/2 -top-4" />
@@ -3979,6 +4051,11 @@ function DrawingFilmstrip({
   onUpload,
 }: DrawingFilmstripProps) {
   const { t } = useTranslation();
+  const uploadJobs = useDwgUploadStore((s) => s.jobs);
+  const activeJobs = useMemo(
+    () => Array.from(uploadJobs.values()).filter((j) => j.status === 'uploading' || j.status === 'converting'),
+    [uploadJobs],
+  );
 
   return (
     <div
@@ -4099,6 +4176,30 @@ function DrawingFilmstrip({
             {t('dwg_takeoff.no_drawings', 'No drawings uploaded yet')}
           </span>
         )}
+        {/* In-progress upload job cards */}
+        {activeJobs.map((job) => (
+          <div
+            key={job.id}
+            className="shrink-0 w-44 h-[72px] rounded-md border border-blue-500/40 bg-blue-500/10 flex flex-col justify-between px-2.5 py-1.5"
+          >
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <span className="text-[11px] font-semibold text-blue-200 truncate flex-1" title={job.fileName}>
+                {job.fileName}
+              </span>
+              <span className="text-[11px] font-bold text-blue-300 tabular-nums shrink-0">{job.progress}%</span>
+            </div>
+            <div className="h-1 rounded-full bg-blue-900/60 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-400 transition-all duration-300"
+                style={{ width: `${job.progress}%` }}
+              />
+            </div>
+            <p className="text-[9px] text-blue-300/70 truncate">
+              {t(job.stage, { defaultValue: job.stage === 'dwg_upload.stage_uploading' ? 'Uploading…' : job.stage === 'dwg_upload.stage_converting' ? 'Analysing…' : 'Processing…' })}
+            </p>
+          </div>
+        ))}
+
         {/* Upload button — compact to match the new card dimensions. */}
         <button
           onClick={onUpload}
