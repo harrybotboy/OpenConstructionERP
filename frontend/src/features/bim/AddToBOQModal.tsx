@@ -20,7 +20,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { X, Search, Plus, CheckCircle2, Loader2, Link2, Sparkles, AlertTriangle, Sigma } from 'lucide-react';
 import { apiGet, apiPost } from '@/shared/lib/api';
 import { boqApi, type BOQ, type BOQWithPositions, type Position } from '@/features/boq/api';
-import { createLink, resolveElementUUID } from './api';
+import { createLinksBulk, resolveElementUUID } from './api';
 import type { BIMElementData } from '@/shared/ui/BIMViewer';
 import { useToastStore } from '@/stores/useToastStore';
 import {
@@ -277,24 +277,15 @@ export default function AddToBOQModal({
   // ── Mutation: link to an existing position ──────────────────────────
   const linkExistingMut = useMutation({
     mutationFn: async (positionId: string) => {
-      let createdCount = 0;
-      for (const el of elements) {
-        try {
-          const resolvedId = await resolveElementUUID(modelId, el);
-          await createLink({
-            boq_position_id: positionId,
-            bim_element_id: resolvedId,
-            link_type: 'manual',
-            confidence: 'high',
-          });
-          createdCount++;
-        } catch (e: unknown) {
-          // Duplicate links will 409 — swallow so bulk linking is idempotent
-          const err = e as { message?: string };
-          if (!err?.message?.includes('already')) throw e;
-        }
-      }
-      return createdCount;
+      const resolvedIds = await Promise.all(elements.map((el) => resolveElementUUID(modelId, el)));
+      const payloads = resolvedIds.map((id) => ({
+        boq_position_id: positionId,
+        bim_element_id: id,
+        link_type: 'manual' as const,
+        confidence: 'high' as const,
+      }));
+      const { created } = await createLinksBulk(payloads);
+      return created;
     },
     onSuccess: (count) => {
       addToast({
@@ -336,23 +327,15 @@ export default function AddToBOQModal({
         unit_rate: rate,
         classification,
       });
-      // Link every element to the new position
-      let linkCount = 0;
-      for (const el of elements) {
-        try {
-          const resolvedId = await resolveElementUUID(modelId, el);
-          await createLink({
-            boq_position_id: newPos.id,
-            bim_element_id: resolvedId,
-            link_type: 'manual',
-            confidence: 'high',
-          });
-          linkCount++;
-        } catch (e: unknown) {
-          const err = e as { message?: string };
-          if (!err?.message?.includes('already')) throw e;
-        }
-      }
+      // Link every element to the new position in one bulk request
+      const resolvedIds = await Promise.all(elements.map((el) => resolveElementUUID(modelId, el)));
+      const payloads = resolvedIds.map((id) => ({
+        boq_position_id: newPos.id,
+        bim_element_id: id,
+        link_type: 'manual' as const,
+        confidence: 'high' as const,
+      }));
+      const { created: linkCount } = await createLinksBulk(payloads);
       return { position: newPos, linkCount };
     },
     onSuccess: ({ linkCount }) => {

@@ -758,6 +758,16 @@ export async function createLink(
   );
 }
 
+/** Create multiple BIM ↔ BOQ links in a single request (fast bulk path). */
+export async function createLinksBulk(
+  payloads: CreateBOQElementLinkRequest[],
+): Promise<{ created: number; skipped: number }> {
+  return apiPost<{ created: number; skipped: number }, CreateBOQElementLinkRequest[]>(
+    '/v1/bim_hub/links/bulk/',
+    payloads,
+  );
+}
+
 /** Remove a BIM ↔ BOQ link by its row id. */
 export async function deleteLink(linkId: string): Promise<void> {
   await apiDelete(`/v1/bim_hub/links/${encodeURIComponent(linkId)}`);

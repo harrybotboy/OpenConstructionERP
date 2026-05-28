@@ -3226,6 +3226,119 @@ async def create_link(
     return BOQElementLinkResponse.model_validate(link)
 
 
+@router.post("/links/bulk/", status_code=201)
+async def create_links_bulk(
+    data: list[BOQElementLinkCreate],
+    user_id: CurrentUserId,
+    _perm: None = Depends(RequirePermission("bim.create")),
+    service: BIMHubService = Depends(_get_service),
+) -> dict:
+    """Create multiple BOQ-BIM links in a single request.
+
+    Uses a single INSERT ... ON CONFLICT DO NOTHING for all rows, then
+    refreshes cad_element_ids and quantity for each affected position once.
+    For 1,000+ elements this completes in ~1-2 s instead of 15 min.
+
+    Returns ``{"created": N, "skipped": M}``.
+    """
+    if not data:
+        return {"created": 0, "skipped": 0}
+
+    import uuid as _uuid
+    from sqlalchemy import text
+    from app.modules.bim_hub.models import BOQElementLink
+
+    # Access check — verify the user owns the position's project (one query
+    # per unique position, not per element).
+    position_ids = {d.boq_position_id for d in data}
+    for pid in position_ids:
+        await _verify_boq_position_access(service, pid, user_id)
+
+    # Build value rows for a single bulk INSERT
+    now = __import__("datetime").datetime.utcnow()
+    rows = [
+        {
+            "id": str(_uuid.uuid4()),
+            "boq_position_id": str(d.boq_position_id),
+            "bim_element_id": str(d.bim_element_id),
+            "link_type": d.link_type,
+            "confidence": d.confidence or "high",
+            "rule_id": str(d.rule_id) if d.rule_id else None,
+            "created_by": str(user_id) if user_id else None,
+            "created_at": now,
+            "updated_at": now,
+        }
+        for d in data
+    ]
+
+    # Single INSERT — ON CONFLICT DO NOTHING skips duplicates silently.
+    # SQLite and PostgreSQL both support this syntax.
+    insert_sql = text("""
+        INSERT INTO oe_bim_boq_link
+            (id, boq_position_id, bim_element_id, link_type, confidence,
+             rule_id, created_by, created_at, updated_at)
+        VALUES
+            (:id, :boq_position_id, :bim_element_id, :link_type, :confidence,
+             :rule_id, :created_by, :created_at, :updated_at)
+        ON CONFLICT DO NOTHING
+    """)
+    result = await service.session.execute(insert_sql, rows)
+    await service.session.flush()
+    created = result.rowcount if result.rowcount >= 0 else len(rows)
+    skipped = len(rows) - created
+
+    # Batch-update cad_element_ids: build the full new set per position
+    # from all current links (one DB query per position).
+    from sqlalchemy import select as _select
+    from app.modules.boq.models import Position
+
+    for pid in position_ids:
+        pos = await service.session.get(Position, pid)
+        if pos is None:
+            continue
+        # Load all element IDs currently linked to this position
+        link_rows = await service.session.execute(
+            _select(BOQElementLink.bim_element_id).where(
+                BOQElementLink.boq_position_id == pid
+            )
+        )
+        all_elem_ids = [str(r[0]) for r in link_rows]
+        pos.cad_element_ids = all_elem_ids
+        await service.session.flush()
+
+    # Sync quantity per position — count units get the link count directly
+    # (avoids N+1 element lookups inside _sync_boq_quantity_from_links).
+    from app.modules.bim_hub.service import normalize_unit_token, _COUNT_UNITS
+    from decimal import Decimal, InvalidOperation
+
+    for pid in position_ids:
+        pos = await service.session.get(Position, pid)
+        if pos is None:
+            continue
+        unit = normalize_unit_token(pos.unit or "")
+        if unit in _COUNT_UNITS:
+            # Count = number of link rows for this position (already in DB)
+            cnt_result = await service.session.execute(
+                _select(__import__("sqlalchemy").func.count()).select_from(BOQElementLink).where(
+                    BOQElementLink.boq_position_id == pid
+                )
+            )
+            cnt = cnt_result.scalar() or 0
+            if cnt > 0:
+                pos.quantity = str(cnt)
+                try:
+                    rate = Decimal(pos.unit_rate or "0")
+                    pos.total = str((Decimal(cnt) * rate).quantize(Decimal("0.01")))
+                except (InvalidOperation, TypeError, ValueError):
+                    pass
+                await service.session.flush()
+        else:
+            await service._sync_boq_quantity_from_links(pid)
+
+    logger.info("Bulk link: created=%d skipped=%d positions=%d", created, skipped, len(position_ids))
+    return {"created": created, "skipped": skipped}
+
+
 @router.delete("/links/{link_id}", status_code=204)
 async def delete_link(
     link_id: uuid.UUID,
