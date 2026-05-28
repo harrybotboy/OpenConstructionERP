@@ -276,6 +276,63 @@ const MASS_KEYS = [
   { source: 'properties' as const, key: 'Weight' },
 ];
 
+/* ── BBox fallback helpers ───────────────────────────────────────────── */
+
+/** Sum bounding-box volume (L × W × H) across elements that have a bbox. */
+function sumBBoxVolume(elements: readonly BIMElementData[]): SumResult {
+  let total = 0;
+  let contributors = 0;
+  for (const el of elements) {
+    const b = el.bounding_box;
+    if (!b) continue;
+    const l = toFiniteNumber(b.max_x != null ? b.max_x - b.min_x : null);
+    const w = toFiniteNumber(b.max_y != null ? b.max_y - b.min_y : null);
+    const h = toFiniteNumber(b.max_z != null ? b.max_z - b.min_z : null);
+    if (l !== null && w !== null && h !== null && l > 0 && w > 0 && h > 0) {
+      total += l * w * h;
+      contributors += 1;
+    }
+  }
+  return { sum: Math.round(total * 100) / 100, contributors, matchedKey: 'bounding_box.volume' };
+}
+
+/** Sum bounding-box footprint area (L × W) across elements that have a bbox. */
+function sumBBoxArea(elements: readonly BIMElementData[]): SumResult {
+  let total = 0;
+  let contributors = 0;
+  for (const el of elements) {
+    const b = el.bounding_box;
+    if (!b) continue;
+    const l = toFiniteNumber(b.max_x != null ? b.max_x - b.min_x : null);
+    const w = toFiniteNumber(b.max_y != null ? b.max_y - b.min_y : null);
+    if (l !== null && w !== null && l > 0 && w > 0) {
+      total += l * w;
+      contributors += 1;
+    }
+  }
+  return { sum: Math.round(total * 100) / 100, contributors, matchedKey: 'bounding_box.footprint' };
+}
+
+/** Sum the longest bounding-box dimension across elements. */
+function sumBBoxLength(elements: readonly BIMElementData[]): SumResult {
+  let total = 0;
+  let contributors = 0;
+  for (const el of elements) {
+    const b = el.bounding_box;
+    if (!b) continue;
+    const dims = [
+      b.max_x - b.min_x,
+      b.max_y - b.min_y,
+      b.max_z - b.min_z,
+    ].filter((d) => Number.isFinite(d) && d > 0);
+    if (dims.length > 0) {
+      total += Math.max(...dims);
+      contributors += 1;
+    }
+  }
+  return { sum: Math.round(total * 100) / 100, contributors, matchedKey: 'bounding_box.max_dim' };
+}
+
 /* ── Public API ──────────────────────────────────────────────────────── */
 
 /**
@@ -320,7 +377,19 @@ export function suggestQuantityFromBIM(
           inferredUnit: 'm³',
         };
       }
-      // Volume requested but no volume field → low confidence zero.
+      // Fallback: BBox volume (L × W × H)
+      const bbox = sumBBoxVolume(elements);
+      if (bbox.contributors > 0) {
+        return {
+          value: bbox.sum,
+          source: 'sum_volume',
+          confidence: 'low',
+          matchedKey: bbox.matchedKey,
+          contributingElements: bbox.contributors,
+          totalElements,
+          inferredUnit: 'm³',
+        };
+      }
       return zeroSuggestion('sum_volume', 'm³', totalElements);
     }
 
@@ -337,6 +406,19 @@ export function suggestQuantityFromBIM(
           inferredUnit: 'm²',
         };
       }
+      // Fallback: BBox footprint (L × W)
+      const bbox = sumBBoxArea(elements);
+      if (bbox.contributors > 0) {
+        return {
+          value: bbox.sum,
+          source: 'sum_area',
+          confidence: 'low',
+          matchedKey: bbox.matchedKey,
+          contributingElements: bbox.contributors,
+          totalElements,
+          inferredUnit: 'm²',
+        };
+      }
       return zeroSuggestion('sum_area', 'm²', totalElements);
     }
 
@@ -349,6 +431,19 @@ export function suggestQuantityFromBIM(
           confidence: r.contributors === totalElements ? 'high' : 'medium',
           matchedKey: r.matchedKey,
           contributingElements: r.contributors,
+          totalElements,
+          inferredUnit: 'm',
+        };
+      }
+      // Fallback: longest BBox dimension
+      const bbox = sumBBoxLength(elements);
+      if (bbox.contributors > 0) {
+        return {
+          value: bbox.sum,
+          source: 'sum_length',
+          confidence: 'low',
+          matchedKey: bbox.matchedKey,
+          contributingElements: bbox.contributors,
           totalElements,
           inferredUnit: 'm',
         };
@@ -460,6 +555,31 @@ export function suggestQuantityFromBIM(
           contributingElements: len.contributors,
           totalElements,
           inferredUnit: 'm',
+        };
+      }
+      // BBox fallback: volume → footprint area → longest dimension
+      const bboxVol = sumBBoxVolume(elements);
+      if (bboxVol.contributors > 0 && bboxVol.sum > 0) {
+        return {
+          value: bboxVol.sum,
+          source: 'sum_volume',
+          confidence: 'low',
+          matchedKey: bboxVol.matchedKey,
+          contributingElements: bboxVol.contributors,
+          totalElements,
+          inferredUnit: 'm³',
+        };
+      }
+      const bboxArea = sumBBoxArea(elements);
+      if (bboxArea.contributors > 0 && bboxArea.sum > 0) {
+        return {
+          value: bboxArea.sum,
+          source: 'sum_area',
+          confidence: 'low',
+          matchedKey: bboxArea.matchedKey,
+          contributingElements: bboxArea.contributors,
+          totalElements,
+          inferredUnit: 'm²',
         };
       }
       return {

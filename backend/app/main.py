@@ -1391,8 +1391,18 @@ def create_app() -> FastAPI:
             if remote is not None:
                 network_ok = True
 
+            # The GitHub repo only hosts Windows .exe binaries.  Linux apt
+            # packages ship a different (ELF) binary so the SHA will never
+            # match — comparing them is meaningless and produces a false
+            # "update available" banner.  Skip the outdated check when the
+            # converter was installed via the system package manager
+            # (path under /usr/bin or /usr/local/bin).
+            is_apt_installed = bool(
+                path and (str(path).startswith("/usr/bin/") or str(path).startswith("/usr/local/bin/"))
+            )
             is_outdated = bool(
-                installed and remote and local_sha and remote.get("sha") and local_sha != remote["sha"]
+                installed and not is_apt_installed
+                and remote and local_sha and remote.get("sha") and local_sha != remote["sha"]
             )
             if is_outdated:
                 any_outdated = True

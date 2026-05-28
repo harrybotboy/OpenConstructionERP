@@ -49,6 +49,7 @@ export interface BIMFilterGroupsPanelProps {
   onClose?: () => void;
   onElementClick?: (elementId: string) => void;
   onQuickTakeoff?: () => void;
+  onLinkByCategory?: () => void;
   visibleElementCount?: number | null;
   onSaveAsGroup?: (
     filter: BIMFilterState,
@@ -150,6 +151,7 @@ export default function BIMFilterGroupsPanel(props: BIMFilterGroupsPanelProps) {
             onClose={props.onClose}
             onElementClick={props.onElementClick}
             onQuickTakeoff={props.onQuickTakeoff}
+            onLinkByCategory={props.onLinkByCategory}
             visibleElementCount={props.visibleElementCount}
             onSaveAsGroup={props.onSaveAsGroup}
             savedGroups={props.savedGroups}

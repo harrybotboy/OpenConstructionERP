@@ -434,11 +434,16 @@ export function BIMConverterStatusBanner({
   }, [dismissed, dismissedVersionSig, currentVersionSig]);
 
   // A *blocking* signal is one the user must act on for BIM upload to work
-  // at all — a missing or broken converter binary. These always override a
-  // prior dismissal: silencing a broken converter would leave the user
-  // unable to load models with no on-screen explanation.
+  // at all — a missing or *failed* (broken) converter binary. These always
+  // override a prior dismissal so the user can't accidentally hide a broken
+  // converter and wonder why uploads stop working.
+  //
+  // "Not installed" alone is NOT blocking when dismissible=true — the user
+  // may simply not need that converter (e.g. DGN, IFC-DDC which has a
+  // fallback). Only a health='failed' (installed but broken smoke-test)
+  // or a converter that is installed but crashing counts as blocking.
   const hasBlockingSignal = (data?.converters ?? []).some(
-    (c) => !c.installed || c.health === 'failed' || c.health === 'not_installed',
+    (c) => c.health === 'failed',
   );
 
   // An "update available" signal is informational, not blocking — the

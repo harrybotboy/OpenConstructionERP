@@ -73,6 +73,7 @@ import { useBIMViewerStore } from '@/stores/useBIMViewerStore';
 import { BIMConverterStatusBanner } from './BIMConverterStatusBanner';
 import { InstallConverterPrompt } from './InstallConverterPrompt';
 import AddToBOQModal from './AddToBOQModal';
+import LinkByCategoryModal from './LinkByCategoryModal';
 import SaveGroupModal from './SaveGroupModal';
 import CreateTaskFromBIMModal from './CreateTaskFromBIMModal';
 import LinkDocumentToBIMModal from './LinkDocumentToBIMModal';
@@ -1663,6 +1664,8 @@ export function BIMPage() {
    *  when the user clicks an element; multiple elements when "quick
    *  takeoff" on a filtered category. */
   const [linkCandidates, setLinkCandidates] = useState<BIMElementData[] | null>(null);
+  /** Elements to link by category — opens LinkByCategoryModal. */
+  const [linkByCatElements, setLinkByCatElements] = useState<BIMElementData[] | null>(null);
   /** Save-as-group modal state — captures the current filter snapshot. */
   const [saveGroupState, setSaveGroupState] = useState<{
     filterCriteria: BIMGroupFilterCriteria;
@@ -2398,6 +2401,15 @@ export function BIMPage() {
     setLinkCandidates(subset);
   }, [elementsQuery.data, filterPredicate, addToast, t]);
 
+  const handleLinkByCategory = useCallback(() => {
+    if (!elementsQuery.data || elementsQuery.data.items.length === 0) return;
+    const subset = filterPredicate
+      ? elementsQuery.data.items.filter(filterPredicate)
+      : elementsQuery.data.items;
+    if (subset.length === 0) return;
+    setLinkByCatElements(subset);
+  }, [elementsQuery.data, filterPredicate]);
+
   const handleUploadComplete = useCallback((modelId: string) => {
     setActiveModelId(modelId); setShowUploadOverride(false); setSelectedElementId(null); setMultiSelectedIds([]);
     setUploadOpen(false); setUploadConvertedName(null);
@@ -2905,6 +2917,7 @@ export function BIMPage() {
               onClose={() => setFilterPanelOpen(false)}
               onElementClick={handleFilterElementClick}
               onQuickTakeoff={handleQuickTakeoff}
+              onLinkByCategory={handleLinkByCategory}
               visibleElementCount={visibleElementCount}
               onSaveAsGroup={handleSaveAsGroup}
               onLinkGroupToBOQ={handleLinkGroupToBOQ}
@@ -3303,6 +3316,18 @@ export function BIMPage() {
       {/* BIM ↔ BOQ linking modal — opened from the properties panel
           ("Add to BOQ" button) or the filter panel's quick-takeoff
           action.  Renders a single-element or bulk-element linker. */}
+      {linkByCatElements && linkByCatElements.length > 0 && projectId && (
+        <LinkByCategoryModal
+          projectId={projectId}
+          modelId={activeModelId ?? ''}
+          elements={linkByCatElements}
+          onClose={() => setLinkByCatElements(null)}
+          onLinked={() => {
+            queryClient.invalidateQueries({ queryKey: ['bim-elements', activeModelId] });
+          }}
+        />
+      )}
+
       {linkCandidates && linkCandidates.length > 0 && projectId && (
         <AddToBOQModal
           projectId={projectId}

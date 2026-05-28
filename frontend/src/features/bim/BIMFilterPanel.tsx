@@ -105,6 +105,9 @@ interface BIMFilterPanelProps {
   /** When set, the panel shows a "Link to BOQ" button that opens the
    *  AddToBOQ modal populated with the current filtered subset. */
   onQuickTakeoff?: () => void;
+  /** When set, shows a "Link by category" button that auto-splits elements
+   *  into one BOQ position per element_type. */
+  onLinkByCategory?: () => void;
   /** Current visible-element count from the parent (after applyFilter). */
   visibleElementCount?: number | null;
   /** When set, the panel shows a "Save as group" button that opens the
@@ -297,6 +300,7 @@ export default function BIMFilterPanel({
   onClose,
   onElementClick,
   onQuickTakeoff,
+  onLinkByCategory,
   visibleElementCount: _visibleElementCount,
   onSaveAsGroup,
   savedGroups,
@@ -922,11 +926,24 @@ export default function BIMFilterPanel({
             Name without reducing the set) still expose the link/save buttons. */}
         {visibleElements.length > 0 && (
           <div className="mt-2 flex gap-1 flex-wrap">
+            {onLinkByCategory && (
+              <button
+                type="button"
+                onClick={onLinkByCategory}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-md bg-oe-blue text-white hover:bg-oe-blue-dark transition-colors"
+                title={t('bim.link_by_category_title', {
+                  defaultValue: 'Create one BOQ position per Revit category',
+                })}
+              >
+                <Link2 size={11} />
+                {t('bim.link_by_category_btn', { defaultValue: 'Link by category' })}
+              </button>
+            )}
             {onQuickTakeoff && (
               <button
                 type="button"
                 onClick={onQuickTakeoff}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-md bg-oe-blue text-white hover:bg-oe-blue-dark transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-md border border-oe-blue/40 text-oe-blue bg-oe-blue/5 hover:bg-oe-blue/10 transition-colors"
                 title={t('bim.quick_takeoff_title', {
                   defaultValue: 'Create a BOQ position from the current filter',
                 })}
